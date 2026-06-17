@@ -3,480 +3,248 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Türkiye İller Rehberi</title>
+<title>Türkiye İller Haritası</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--bg2:#161b27;--bg3:#1e2535;--card:#1a2032;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#e4e8f0;--text2:#9ba3b8;--text3:#5c6480;
+  --red:#e8512a;--red2:#ff6b47;--gold:#f0a832;--teal:#26c6a8;
+  --r:12px;--rs:8px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
-  :root {
-    --bg: #0f1117;
-    --bg2: #161b27;
-    --bg3: #1e2535;
-    --card: #1a2032;
-    --border: rgba(255,255,255,0.08);
-    --border2: rgba(255,255,255,0.15);
-    --text: #e8eaf0;
-    --text2: #9ba3b8;
-    --text3: #6b7390;
-    --accent: #e8512a;
-    --accent2: #ff7043;
-    --gold: #f0a500;
-    --teal: #26c6a8;
-    --blue: #4a90d9;
-    --radius: 12px;
-    --radius-sm: 8px;
-  }
+/* ── VIEWS ── */
+#map-view{min-height:100vh;display:flex;flex-direction:column}
+#detail-view{display:none;min-height:100vh;flex-direction:column}
 
-  body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+/* ── HEADER ── */
+.app-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.9rem 1.5rem;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:20;
+}
+.app-title{font-size:1.1rem;font-weight:700;letter-spacing:-.3px}
+.app-title span{color:var(--red)}
+.header-stats{display:flex;gap:1.5rem}
+.hstat{text-align:right}
+.hstat-n{font-size:1rem;font-weight:700;color:var(--gold)}
+.hstat-l{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
 
-  /* ===== MAP VIEW ===== */
-  #map-view {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+/* ── SEARCH + FILTER ── */
+.controls{
+  padding:.9rem 1.5rem .5rem;
+  display:flex;flex-direction:column;gap:.7rem;
+  max-width:1100px;margin:0 auto;width:100%;
+}
+.search-box{position:relative}
+.search-box input{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:50px;padding:.55rem 1rem .55rem 2.6rem;
+  color:var(--text);font-size:.88rem;outline:none;transition:border-color .2s;
+}
+.search-box input:focus{border-color:var(--red)}
+.search-box input::placeholder{color:var(--text3)}
+.si{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:.9rem;pointer-events:none}
+.region-row{display:flex;gap:.4rem;flex-wrap:wrap}
+.rbtn{
+  background:var(--bg3);border:1px solid var(--border);border-radius:50px;
+  padding:.28rem .75rem;font-size:.72rem;color:var(--text2);cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.rbtn:hover{border-color:var(--border2);color:var(--text)}
+.rbtn.on{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
 
-  .hero {
-    background: linear-gradient(135deg, #0f1117 0%, #1a1f2e 50%, #0f1117 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 2rem 1.5rem 1.5rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
+/* ── MAP CONTAINER ── */
+.map-wrap{
+  flex:1;padding:.5rem 1.2rem 1rem;
+  max-width:1100px;margin:0 auto;width:100%;
+  display:flex;flex-direction:column;gap:.6rem;
+}
+.map-svg-wrap{
+  position:relative;width:100%;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;
+}
+#turkey-svg{
+  width:100%;height:auto;display:block;
+  cursor:default;
+}
+#turkey-svg path{
+  fill:#1e3a5f;stroke:#0d1117;stroke-width:0.8;
+  transition:fill .15s;cursor:pointer;
+}
+#turkey-svg path:hover,
+#turkey-svg path.hovered{fill:#2563a8}
+#turkey-svg path.active{fill:var(--red);stroke:#ff9070;stroke-width:1.2}
+#turkey-svg path.dimmed{fill:#131b29;opacity:.6}
 
-  .hero::before {
-    content: '';
-    position: absolute;
-    top: -60px; left: 50%;
-    transform: translateX(-50%);
-    width: 600px; height: 200px;
-    background: radial-gradient(ellipse, rgba(232,81,42,0.12) 0%, transparent 70%);
-    pointer-events: none;
-  }
+/* Tooltip */
+#tooltip{
+  position:absolute;pointer-events:none;
+  background:rgba(13,17,23,.95);border:1px solid var(--border2);
+  border-radius:var(--rs);padding:.5rem .8rem;
+  font-size:.8rem;color:var(--text);
+  display:none;white-space:nowrap;z-index:30;
+  backdrop-filter:blur(8px);
+}
+#tooltip .tp-name{font-weight:700;font-size:.88rem;margin-bottom:.15rem}
+#tooltip .tp-sub{color:var(--text3);font-size:.72rem}
+#tooltip .tp-plate{
+  display:inline-block;background:var(--red);color:#fff;
+  font-size:.68rem;font-weight:700;padding:.1rem .35rem;
+  border-radius:3px;margin-left:.4rem;vertical-align:middle;
+}
 
-  .hero h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    margin-bottom: 0.4rem;
-  }
+/* Map legend */
+.map-legend{
+  display:flex;gap:1.2rem;align-items:center;
+  font-size:.72rem;color:var(--text3);padding:.2rem 0;
+}
+.leg-dot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:.3rem}
 
-  .hero h1 span { color: var(--accent); }
+/* ── LIST ── */
+.provinces-list{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:.5rem;margin-top:.3rem;
+}
+.pc{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--rs);
+  padding:.7rem .85rem;cursor:pointer;transition:all .15s;
+}
+.pc:hover{border-color:var(--red);background:var(--bg3);transform:translateY(-1px)}
+.pc.active{border-color:var(--red);background:rgba(232,81,42,.1)}
+.pc-pl{
+  display:inline-block;background:var(--red);color:#fff;
+  font-size:.6rem;font-weight:700;padding:.1rem .35rem;
+  border-radius:3px;margin-bottom:.35rem;
+}
+.pc-name{font-size:.85rem;font-weight:600;margin-bottom:.15rem}
+.pc-sub{font-size:.66rem;color:var(--text3)}
+.no-res{grid-column:1/-1;text-align:center;color:var(--text3);padding:2rem;font-size:.88rem}
 
-  .hero p {
-    color: var(--text2);
-    font-size: 0.95rem;
-  }
+/* ── DETAIL VIEW ── */
+.detail-header{
+  display:flex;align-items:center;gap:1rem;
+  padding:.85rem 1.5rem;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:20;
+}
+.back-btn{
+  display:flex;align-items:center;gap:.35rem;
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:50px;padding:.38rem 1rem;
+  color:var(--text);font-size:.82rem;font-weight:500;
+  cursor:pointer;transition:all .15s;text-decoration:none;white-space:nowrap;
+}
+.back-btn:hover{background:var(--red);border-color:var(--red);color:#fff}
+.back-btn svg{width:14px;height:14px;flex-shrink:0}
+.dh-info{flex:1;min-width:0}
+.dh-info h2{font-size:1.15rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dh-info p{font-size:.73rem;color:var(--text3)}
+.plate-big{
+  background:var(--red);color:#fff;font-size:1.1rem;font-weight:800;
+  padding:.4rem .85rem;border-radius:var(--rs);letter-spacing:1px;
+  min-width:52px;text-align:center;flex-shrink:0;
+}
 
-  .stats-bar {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin-top: 1.2rem;
-  }
+.detail-body{max-width:860px;margin:0 auto;padding:1.3rem 1.5rem;width:100%}
 
-  .stat {
-    text-align: center;
-  }
+/* Meta row */
+.meta-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.6rem;margin-bottom:1.2rem}
+.mc{background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:.75rem .9rem}
+.mc .ml{font-size:.64rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.25rem}
+.mc .mv{font-size:.9rem;font-weight:600}
+.mc .mv.g{color:var(--gold)}
+.mc .mv.t{color:var(--teal)}
 
-  .stat-num {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--gold);
-  }
+/* Slogan */
+.slogan-box{
+  background:linear-gradient(135deg,rgba(232,81,42,.1),rgba(232,81,42,.04));
+  border:1px solid rgba(232,81,42,.25);border-radius:var(--r);
+  padding:.85rem 1.1rem;margin-bottom:1.2rem;
+  font-style:italic;color:#ff8c6e;font-size:.95rem;
+}
 
-  .stat-label {
-    font-size: 0.72rem;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
+/* Section */
+.sec-title{
+  font-size:.68rem;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.8px;
+  margin-bottom:.7rem;display:flex;align-items:center;gap:.5rem;
+}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
 
-  /* Search */
-  .search-wrap {
-    padding: 1.2rem 1.5rem 0;
-    max-width: 520px;
-    margin: 0 auto;
-    width: 100%;
-  }
+/* Facts */
+.facts-list{display:flex;flex-direction:column;gap:.4rem;margin-bottom:1.2rem}
+.fact{
+  background:var(--card);border:1px solid var(--border);
+  border-left:3px solid var(--teal);
+  border-radius:0 var(--rs) var(--rs) 0;
+  padding:.65rem .9rem;font-size:.84rem;line-height:1.55;
+  transition:border-left-color .15s;
+}
+.fact:hover{border-left-color:var(--red)}
 
-  .search-box {
-    position: relative;
-  }
+/* Districts */
+.dist-wrap{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:1.5rem}
+.dtag{
+  background:var(--bg3);border:1px solid var(--border);border-radius:50px;
+  padding:.25rem .65rem;font-size:.73rem;color:var(--text2);
+  transition:all .15s;cursor:default;
+}
+.dtag:hover{border-color:var(--border2);color:var(--text)}
 
-  .search-box input {
-    width: 100%;
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    border-radius: 50px;
-    padding: 0.7rem 1.2rem 0.7rem 3rem;
-    color: var(--text);
-    font-size: 0.95rem;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .search-box input:focus { border-color: var(--accent); }
-
-  .search-icon {
-    position: absolute;
-    left: 1rem; top: 50%;
-    transform: translateY(-50%);
-    color: var(--text3);
-    font-size: 1rem;
-  }
-
-  /* Region filter */
-  .region-wrap {
-    padding: 1rem 1.5rem;
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  .region-btn {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 50px;
-    padding: 0.35rem 0.9rem;
-    font-size: 0.78rem;
-    color: var(--text2);
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-
-  .region-btn:hover { border-color: var(--border2); color: var(--text); }
-  .region-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-
-  /* Grid */
-  .provinces-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 0.75rem;
-    padding: 0.5rem 1.5rem 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  .province-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem;
-    cursor: pointer;
-    transition: all 0.18s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .province-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: var(--accent);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.2s;
-  }
-
-  .province-card:hover {
-    border-color: var(--border2);
-    transform: translateY(-2px);
-    background: var(--bg3);
-  }
-
-  .province-card:hover::before { transform: scaleX(1); }
-
-  .province-plate {
-    display: inline-block;
-    background: var(--accent);
-    color: #fff;
-    font-size: 0.65rem;
-    font-weight: 700;
-    padding: 0.15rem 0.45rem;
-    border-radius: 4px;
-    margin-bottom: 0.5rem;
-    letter-spacing: 0.5px;
-  }
-
-  .province-name {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-    color: var(--text);
-  }
-
-  .province-region {
-    font-size: 0.7rem;
-    color: var(--text3);
-  }
-
-  .province-count {
-    margin-top: 0.5rem;
-    font-size: 0.7rem;
-    color: var(--teal);
-  }
-
-  /* ===== DETAIL VIEW ===== */
-  #detail-view {
-    display: none;
-    min-height: 100vh;
-    flex-direction: column;
-  }
-
-  .detail-header {
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    padding: 1rem 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-
-  .back-btn {
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    border-radius: 50px;
-    padding: 0.4rem 1rem 0.4rem 0.7rem;
-    color: var(--text);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: all 0.15s;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .back-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-  .back-btn svg { width: 16px; height: 16px; }
-
-  .detail-header-info { flex: 1; }
-
-  .detail-header-info h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
-  }
-
-  .detail-header-info span {
-    font-size: 0.78rem;
-    color: var(--text3);
-  }
-
-  .plate-badge {
-    background: var(--accent);
-    color: #fff;
-    font-size: 1.1rem;
-    font-weight: 800;
-    padding: 0.4rem 0.8rem;
-    border-radius: var(--radius-sm);
-    letter-spacing: 1px;
-    min-width: 52px;
-    text-align: center;
-  }
-
-  /* Detail body */
-  .detail-body {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 1.5rem;
-    width: 100%;
-  }
-
-  /* Meta cards */
-  .meta-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .meta-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.85rem 1rem;
-  }
-
-  .meta-card .label {
-    font-size: 0.68rem;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.3rem;
-  }
-
-  .meta-card .value {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text);
-  }
-
-  .meta-card .value.accent { color: var(--gold); }
-
-  /* Slogan */
-  .slogan-box {
-    background: linear-gradient(135deg, rgba(232,81,42,0.12), rgba(232,81,42,0.05));
-    border: 1px solid rgba(232,81,42,0.3);
-    border-radius: var(--radius);
-    padding: 1rem 1.2rem;
-    margin-bottom: 1.5rem;
-    font-style: italic;
-    color: var(--accent2);
-    font-size: 1rem;
-  }
-
-  /* Facts */
-  .section-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  .facts-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .fact-item {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--teal);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    padding: 0.75rem 1rem;
-    font-size: 0.88rem;
-    line-height: 1.5;
-    color: var(--text);
-    transition: border-left-color 0.15s;
-  }
-
-  .fact-item:hover { border-left-color: var(--accent); }
-
-  /* Districts */
-  .districts-wrap {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-bottom: 2rem;
-  }
-
-  .district-tag {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 50px;
-    padding: 0.3rem 0.75rem;
-    font-size: 0.78rem;
-    color: var(--text2);
-    transition: all 0.15s;
-  }
-
-  .district-tag:hover {
-    border-color: var(--border2);
-    color: var(--text);
-    background: var(--card);
-  }
-
-  /* Counter badge */
-  .count-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 50px;
-    padding: 0.25rem 0.75rem;
-    font-size: 0.75rem;
-    color: var(--text2);
-    margin-bottom: 1rem;
-  }
-
-  .count-badge strong { color: var(--gold); }
-
-  /* No results */
-  .no-results {
-    text-align: center;
-    color: var(--text3);
-    padding: 3rem 1rem;
-    grid-column: 1 / -1;
-  }
-
-  .no-results .emoji { font-size: 2rem; margin-bottom: 0.5rem; }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+/* Responsive */
+@media(max-width:600px){
+  .header-stats{gap:.8rem}
+  .hstat-n{font-size:.85rem}
+  .provinces-list{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+}
 </style>
 </head>
 <body>
 
-<!-- MAP VIEW (province list) -->
+<!-- ══════════════ MAP VIEW ══════════════ -->
 <div id="map-view">
-  <div class="hero">
-    <h1>Türkiye <span>İller</span> Rehberi</h1>
-    <p>81 il · plaka kodları · ilçeler · ünlü özellikler</p>
-    <div class="stats-bar">
-      <div class="stat">
-        <div class="stat-num" id="total-il">81</div>
-        <div class="stat-label">İl</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num" id="total-bilgi">–</div>
-        <div class="stat-label">Bilgi</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num" id="total-ilce">–</div>
-        <div class="stat-label">İlçe</div>
-      </div>
+  <header class="app-header">
+    <div class="app-title">Türkiye <span>İller</span> Haritası</div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-n">81</div><div class="hstat-l">İl</div></div>
+      <div class="hstat"><div class="hstat-n" id="hs-bilgi">496</div><div class="hstat-l">Bilgi</div></div>
+      <div class="hstat"><div class="hstat-n" id="hs-ilce">962</div><div class="hstat-l">İlçe</div></div>
     </div>
-  </div>
+  </header>
 
-  <div class="search-wrap">
+  <div class="controls">
     <div class="search-box">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="search-input" placeholder="İl ara... (örn: Ankara, Antalya)" autocomplete="off">
+      <span class="si">🔍</span>
+      <input type="text" id="search-inp" placeholder="İl ara... (Ankara, İstanbul, 34...)" autocomplete="off">
     </div>
+    <div class="region-row" id="region-row"></div>
   </div>
 
-  <div class="region-wrap" id="region-filters"></div>
-
-  <div class="provinces-grid" id="provinces-grid"></div>
+  <div class="map-wrap">
+    <div class="map-svg-wrap">
+      <svg id="turkey-svg" viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
+        <!-- paths injected by JS -->
+      </svg>
+      <div id="tooltip">
+        <div class="tp-name" id="tp-name">–</div>
+        <div class="tp-sub" id="tp-sub">–</div>
+      </div>
+    </div>
+    <div class="map-legend">
+      <span><span class="leg-dot" style="background:#1e3a5f"></span>Normal</span>
+      <span><span class="leg-dot" style="background:#2563a8"></span>Üzerine gelindi</span>
+      <span><span class="leg-dot" style="background:#e8512a"></span>Seçili</span>
+    </div>
+    <div class="provinces-list" id="plist"></div>
+  </div>
 </div>
 
-<!-- DETAIL VIEW -->
+<!-- ══════════════ DETAIL VIEW ══════════════ -->
 <div id="detail-view">
   <div class="detail-header">
     <button class="back-btn" id="back-btn">
@@ -485,148 +253,199 @@
       </svg>
       Haritaya dön
     </button>
-    <div class="detail-header-info">
-      <h2 id="detail-name">–</h2>
-      <span id="detail-region">–</span>
+    <div class="dh-info">
+      <h2 id="d-name">–</h2>
+      <p id="d-region">–</p>
     </div>
-    <div class="plate-badge" id="detail-plate">00</div>
+    <div class="plate-big" id="d-plate">00</div>
   </div>
-
   <div class="detail-body">
-    <div class="meta-row" id="detail-meta"></div>
-    <div class="slogan-box" id="detail-slogan"></div>
-
-    <div class="section-title">Öne Çıkan Bilgiler</div>
-    <div class="facts-list" id="detail-facts"></div>
-
-    <div class="section-title">İlçeler</div>
-    <div class="districts-wrap" id="detail-districts"></div>
+    <div class="meta-row" id="d-meta"></div>
+    <div class="slogan-box" id="d-slogan"></div>
+    <div class="sec-title">Öne Çıkan Bilgiler</div>
+    <div class="facts-list" id="d-facts"></div>
+    <div class="sec-title">İlçeler</div>
+    <div class="dist-wrap" id="d-dist"></div>
   </div>
 </div>
 
 <script src="data.js"></script>
+<script src="paths.js"></script>
 <script>
-  const mapView = document.getElementById('map-view');
-  const detailView = document.getElementById('detail-view');
-  const grid = document.getElementById('provinces-grid');
-  const searchInput = document.getElementById('search-input');
-  const regionFiltersEl = document.getElementById('region-filters');
-  let activeRegion = 'Tümü';
+// ── DATA PREP ──
+const totalBilgi = ILLER.reduce((s,i)=>s+i.bilgiler.length,0);
+const totalIlce  = ILLER.reduce((s,i)=>s+i.ilceler.length,0);
+document.getElementById('hs-bilgi').textContent = totalBilgi;
+document.getElementById('hs-ilce').textContent  = totalIlce;
 
-  // Compute totals
-  const totalBilgi = ILLER.reduce((s, il) => s + il.bilgiler.length, 0);
-  const totalIlce = ILLER.reduce((s, il) => s + il.ilceler.length, 0);
-  document.getElementById('total-bilgi').textContent = totalBilgi;
-  document.getElementById('total-ilce').textContent = totalIlce;
+// Map il name → data object (handle variations)
+const ilByName = {};
+ILLER.forEach(il => { ilByName[il.ad] = il; });
 
-  // Regions
-  const regions = ['Tümü', ...new Set(ILLER.map(i => i.bolge))];
-  regions.forEach(r => {
-    const btn = document.createElement('button');
-    btn.className = 'region-btn' + (r === 'Tümü' ? ' active' : '');
-    btn.textContent = r;
-    btn.onclick = () => {
-      activeRegion = r;
-      document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderGrid();
-    };
-    regionFiltersEl.appendChild(btn);
+// Alias for mismatches between SVG names and data names
+const SVG_ALIAS = {
+  'İçel (Mersin)': 'İçel (Mersin)',
+};
+
+function getIlByMapName(mapName) {
+  return ilByName[mapName] || ilByName[SVG_ALIAS[mapName]] || null;
+}
+
+// ── BUILD SVG ──
+const svg = document.getElementById('turkey-svg');
+const tooltip = document.getElementById('tooltip');
+const tpName = document.getElementById('tp-name');
+const tpSub  = document.getElementById('tp-sub');
+
+MAP_PATHS.forEach(mp => {
+  const il = getIlByMapName(mp.name);
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', mp.d);
+  path.setAttribute('data-name', mp.name);
+  if (il) {
+    path.setAttribute('title', il.ad);
+    path.addEventListener('mouseenter', (e) => onPathHover(e, path, il));
+    path.addEventListener('mouseleave', () => onPathLeave(path));
+    path.addEventListener('mousemove', (e) => moveTooltip(e));
+    path.addEventListener('click', () => showDetail(il));
+  }
+  svg.appendChild(path);
+});
+
+// ── TOOLTIP ──
+let activeHover = null;
+function onPathHover(e, path, il) {
+  activeHover = path;
+  path.classList.add('hovered');
+  tpName.innerHTML = il.ad + `<span class="tp-plate">${il.plaka}</span>`;
+  tpSub.textContent = il.bolge + ' · ' + il.ilceler.length + ' ilçe';
+  tooltip.style.display = 'block';
+  moveTooltip(e);
+}
+function onPathLeave(path) {
+  path.classList.remove('hovered');
+  activeHover = null;
+  tooltip.style.display = 'none';
+}
+function moveTooltip(e) {
+  const wrap = document.querySelector('.map-svg-wrap');
+  const rect = wrap.getBoundingClientRect();
+  let x = e.clientX - rect.left + 14;
+  let y = e.clientY - rect.top - 10;
+  // Keep inside
+  if (x + 160 > rect.width) x = e.clientX - rect.left - 170;
+  if (y + 60 > rect.height) y = e.clientY - rect.top - 65;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top  = y + 'px';
+}
+
+// ── REGION FILTER ──
+const regions = ['Tümü', ...new Set(ILLER.map(i=>i.bolge))];
+let activeRegion = 'Tümü';
+const regionRow = document.getElementById('region-row');
+regions.forEach(r => {
+  const btn = document.createElement('button');
+  btn.className = 'rbtn' + (r==='Tümü'?' on':'');
+  btn.textContent = r;
+  btn.onclick = () => {
+    activeRegion = r;
+    document.querySelectorAll('.rbtn').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    renderList();
+    updateMapColors();
+  };
+  regionRow.appendChild(btn);
+});
+
+// ── SEARCH ──
+const searchInp = document.getElementById('search-inp');
+searchInp.addEventListener('input', () => { renderList(); updateMapColors(); });
+
+function getFiltered() {
+  const q = searchInp.value.trim().toLowerCase();
+  return ILLER.filter(il => {
+    const mr = activeRegion==='Tümü' || il.bolge===activeRegion;
+    const ms = !q || il.ad.toLowerCase().includes(q) || il.plaka.includes(q) || String(il.id)===q;
+    return mr && ms;
+  });
+}
+
+// ── LIST ──
+const plist = document.getElementById('plist');
+function renderList() {
+  const filtered = getFiltered();
+  plist.innerHTML = '';
+  if (!filtered.length) {
+    plist.innerHTML = '<div class="no-res">Sonuç bulunamadı</div>';
+    return;
+  }
+  filtered.forEach(il => {
+    const d = document.createElement('div');
+    d.className = 'pc';
+    d.innerHTML = `<div class="pc-pl">${il.plaka}</div><div class="pc-name">${il.ad}</div><div class="pc-sub">${il.bolge}</div>`;
+    d.onclick = () => showDetail(il);
+    plist.appendChild(d);
+  });
+}
+
+// ── MAP COLORS based on filter ──
+function updateMapColors() {
+  const filtered = getFiltered();
+  const filteredNames = new Set(filtered.map(i=>i.ad));
+  // also handle alias
+  svg.querySelectorAll('path').forEach(p => {
+    const name = p.getAttribute('data-name');
+    const il = getIlByMapName(name);
+    if (!il) return;
+    p.classList.remove('dimmed');
+    if (!filteredNames.has(il.ad)) {
+      p.classList.add('dimmed');
+    }
+  });
+}
+
+renderList();
+
+// ── DETAIL VIEW ──
+function showDetail(il) {
+  document.getElementById('d-name').textContent   = il.ad;
+  document.getElementById('d-region').textContent = il.bolge + ' Bölgesi';
+  document.getElementById('d-plate').textContent  = il.plaka;
+  document.getElementById('d-slogan').textContent = '« ' + il.slogan + ' »';
+
+  document.getElementById('d-meta').innerHTML = `
+    <div class="mc"><div class="ml">Plaka</div><div class="mv g">${il.plaka}</div></div>
+    <div class="mc"><div class="ml">Bölge</div><div class="mv">${il.bolge}</div></div>
+    <div class="mc"><div class="ml">Nüfus</div><div class="mv">${il.nufus}</div></div>
+    <div class="mc"><div class="ml">Yüzölçüm</div><div class="mv">${il.yuzolcum}</div></div>
+    <div class="mc"><div class="ml">İlçe</div><div class="mv t">${il.ilceler.length}</div></div>
+    <div class="mc"><div class="ml">Bilgi sayısı</div><div class="mv g">${il.bilgiler.length}</div></div>
+  `;
+
+  document.getElementById('d-facts').innerHTML =
+    il.bilgiler.map(b=>`<div class="fact">${b}</div>`).join('');
+
+  document.getElementById('d-dist').innerHTML =
+    il.ilceler.map(d=>`<div class="dtag">${d}</div>`).join('');
+
+  // Highlight on SVG
+  svg.querySelectorAll('path').forEach(p => p.classList.remove('active'));
+  svg.querySelectorAll('path').forEach(p => {
+    if (getIlByMapName(p.getAttribute('data-name'))?.ad === il.ad) p.classList.add('active');
   });
 
-  // Render grid
-  function renderGrid() {
-    const q = searchInput.value.trim().toLowerCase();
-    const filtered = ILLER.filter(il => {
-      const matchRegion = activeRegion === 'Tümü' || il.bolge === activeRegion;
-      const matchSearch = !q || il.ad.toLowerCase().includes(q) || il.plaka.includes(q);
-      return matchRegion && matchSearch;
-    });
+  document.getElementById('map-view').style.display  = 'none';
+  document.getElementById('detail-view').style.display = 'flex';
+  document.getElementById('detail-view').style.flexDirection = 'column';
+  window.scrollTo(0,0);
+}
 
-    grid.innerHTML = '';
-
-    if (!filtered.length) {
-      grid.innerHTML = '<div class="no-results"><div class="emoji">🔍</div><div>Sonuç bulunamadı.</div></div>';
-      return;
-    }
-
-    filtered.forEach(il => {
-      const card = document.createElement('div');
-      card.className = 'province-card';
-      card.innerHTML = `
-        <div class="province-plate">${il.plaka}</div>
-        <div class="province-name">${il.ad}</div>
-        <div class="province-region">${il.bolge}</div>
-        <div class="province-count">● ${il.bilgiler.length} bilgi · ${il.ilceler.length} ilçe</div>
-      `;
-      card.onclick = () => showDetail(il);
-      grid.appendChild(card);
-    });
-  }
-
-  searchInput.addEventListener('input', renderGrid);
-
-  // Show detail
-  function showDetail(il) {
-    document.getElementById('detail-name').textContent = il.ad;
-    document.getElementById('detail-region').textContent = il.bolge + ' Bölgesi';
-    document.getElementById('detail-plate').textContent = il.plaka;
-    document.getElementById('detail-slogan').textContent = '« ' + il.slogan + ' »';
-
-    // Meta
-    const meta = document.getElementById('detail-meta');
-    meta.innerHTML = `
-      <div class="meta-card">
-        <div class="label">Plaka Kodu</div>
-        <div class="value accent">${il.plaka}</div>
-      </div>
-      <div class="meta-card">
-        <div class="label">Bölge</div>
-        <div class="value">${il.bolge}</div>
-      </div>
-      <div class="meta-card">
-        <div class="label">Nüfus</div>
-        <div class="value">${il.nufus}</div>
-      </div>
-      <div class="meta-card">
-        <div class="label">Yüzölçümü</div>
-        <div class="value">${il.yuzolcum}</div>
-      </div>
-      <div class="meta-card">
-        <div class="label">İlçe Sayısı</div>
-        <div class="value accent">${il.ilceler.length}</div>
-      </div>
-      <div class="meta-card">
-        <div class="label">Bilgi Sayısı</div>
-        <div class="value accent">${il.bilgiler.length}</div>
-      </div>
-    `;
-
-    // Facts
-    const facts = document.getElementById('detail-facts');
-    facts.innerHTML = il.bilgiler.map(b => `<div class="fact-item">${b}</div>`).join('');
-
-    // Districts
-    const dist = document.getElementById('detail-districts');
-    dist.innerHTML = il.ilceler.map(d => `<div class="district-tag">${d}</div>`).join('');
-
-    // Switch view
-    mapView.style.display = 'none';
-    detailView.style.display = 'flex';
-    detailView.style.flexDirection = 'column';
-    window.scrollTo(0, 0);
-  }
-
-  // Back button
-  document.getElementById('back-btn').onclick = () => {
-    detailView.style.display = 'none';
-    mapView.style.display = 'flex';
-    mapView.style.flexDirection = 'column';
-    window.scrollTo(0, 0);
-  };
-
-  // Initial render
-  renderGrid();
+document.getElementById('back-btn').onclick = () => {
+  document.getElementById('detail-view').style.display = 'none';
+  document.getElementById('map-view').style.display    = 'flex';
+  document.getElementById('map-view').style.flexDirection = 'column';
+  window.scrollTo(0,0);
+};
 </script>
 </body>
 </html>
