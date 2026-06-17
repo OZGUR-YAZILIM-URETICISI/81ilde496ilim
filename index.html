@@ -6,335 +6,343 @@
 <title>Türkiye İller Haritası</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
+
+/* ── DARK THEME (default) ── */
 :root{
   --bg:#0d1117;--bg2:#161b27;--bg3:#1e2535;--card:#1a2032;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
   --text:#e4e8f0;--text2:#9ba3b8;--text3:#5c6480;
-  --red:#e8512a;--red2:#ff6b47;--gold:#f0a832;--teal:#26c6a8;
+  --red:#e8512a;--gold:#f0a832;--teal:#26c6a8;
   --r:12px;--rs:8px;
+  --map-fill:#1e3a5f;--map-hover:#2563a8;--map-stroke:#0d1117;
+  --map-dimmed:#131b29;--map-dimmed-op:.5;
+  --shadow:rgba(0,0,0,.4);
 }
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
-/* ── VIEWS ── */
-#map-view{min-height:100vh;display:flex;flex-direction:column}
-#detail-view{display:none;min-height:100vh;flex-direction:column}
+/* ── LIGHT THEME ── */
+body.light{
+  --bg:#f0f2f5;--bg2:#ffffff;--bg3:#e8eaed;--card:#ffffff;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);
+  --text:#1a1d23;--text2:#4a5168;--text3:#8891a8;
+  --map-fill:#b8d4f0;--map-hover:#5a9fd4;--map-stroke:#f0f2f5;
+  --map-dimmed:#d8dfe8;--map-dimmed-op:.6;
+  --shadow:rgba(0,0,0,.12);
+}
+
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;overflow-x:hidden;
+  transition:background .25s,color .25s;
+}
 
 /* ── HEADER ── */
 .app-header{
   display:flex;align-items:center;justify-content:space-between;
-  padding:.9rem 1.5rem;
+  padding:.85rem 1.5rem;
   background:var(--bg2);border-bottom:1px solid var(--border);
   position:sticky;top:0;z-index:20;
+  box-shadow:0 1px 8px var(--shadow);
 }
-.app-title{font-size:1.1rem;font-weight:700;letter-spacing:-.3px}
+.app-title{font-size:1.05rem;font-weight:700;letter-spacing:-.3px}
 .app-title span{color:var(--red)}
-.header-stats{display:flex;gap:1.5rem}
-.hstat{text-align:right}
-.hstat-n{font-size:1rem;font-weight:700;color:var(--gold)}
-.hstat-l{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
 
-/* ── SEARCH + FILTER ── */
+.header-right{display:flex;align-items:center;gap:1.2rem}
+.header-stats{display:flex;gap:1.3rem}
+.hstat{text-align:right}
+.hstat-n{font-size:.95rem;font-weight:700;color:var(--gold)}
+.hstat-l{font-size:.6rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+
+/* Theme toggle */
+.theme-btn{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:50px;
+  padding:.3rem .7rem;cursor:pointer;font-size:.8rem;color:var(--text2);
+  transition:all .15s;display:flex;align-items:center;gap:.35rem;white-space:nowrap;
+}
+.theme-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* ── CONTROLS ── */
 .controls{
   padding:.9rem 1.5rem .5rem;
-  display:flex;flex-direction:column;gap:.7rem;
+  display:flex;flex-direction:column;gap:.65rem;
   max-width:1100px;margin:0 auto;width:100%;
 }
 .search-box{position:relative}
 .search-box input{
   width:100%;background:var(--bg3);border:1px solid var(--border2);
-  border-radius:50px;padding:.55rem 1rem .55rem 2.6rem;
-  color:var(--text);font-size:.88rem;outline:none;transition:border-color .2s;
+  border-radius:50px;padding:.52rem 1rem .52rem 2.5rem;
+  color:var(--text);font-size:.86rem;outline:none;transition:border-color .2s;
 }
 .search-box input:focus{border-color:var(--red)}
 .search-box input::placeholder{color:var(--text3)}
-.si{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:.9rem;pointer-events:none}
-.region-row{display:flex;gap:.4rem;flex-wrap:wrap}
+.si{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:.85rem;pointer-events:none}
+.region-row{display:flex;gap:.35rem;flex-wrap:wrap}
 .rbtn{
   background:var(--bg3);border:1px solid var(--border);border-radius:50px;
-  padding:.28rem .75rem;font-size:.72rem;color:var(--text2);cursor:pointer;
+  padding:.25rem .7rem;font-size:.7rem;color:var(--text2);cursor:pointer;
   transition:all .15s;white-space:nowrap;
 }
 .rbtn:hover{border-color:var(--border2);color:var(--text)}
 .rbtn.on{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
 
-/* ── MAP CONTAINER ── */
+/* ── MAP ── */
 .map-wrap{
-  flex:1;padding:.5rem 1.2rem 1rem;
+  padding:.5rem 1.2rem 0;
   max-width:1100px;margin:0 auto;width:100%;
-  display:flex;flex-direction:column;gap:.6rem;
 }
 .map-svg-wrap{
   position:relative;width:100%;
   background:var(--bg2);border:1px solid var(--border);
   border-radius:var(--r);overflow:hidden;
 }
-#turkey-svg{
-  width:100%;height:auto;display:block;
-  cursor:default;
-}
+#turkey-svg{width:100%;height:auto;display:block;cursor:default}
 #turkey-svg path{
-  fill:#1e3a5f;stroke:#0d1117;stroke-width:0.8;
-  transition:fill .15s;cursor:pointer;
+  fill:var(--map-fill);stroke:var(--map-stroke);stroke-width:.8;
+  transition:fill .13s;cursor:pointer;
 }
-#turkey-svg path:hover,
-#turkey-svg path.hovered{fill:#2563a8}
-#turkey-svg path.active{fill:var(--red);stroke:#ff9070;stroke-width:1.2}
-#turkey-svg path.dimmed{fill:#131b29;opacity:.6}
+#turkey-svg path:hover{fill:var(--map-hover)}
+#turkey-svg path.active{fill:var(--red);stroke:var(--red);stroke-width:1.2}
+#turkey-svg path.dimmed{fill:var(--map-dimmed);opacity:var(--map-dimmed-op)}
 
 /* Tooltip */
 #tooltip{
   position:absolute;pointer-events:none;
-  background:rgba(13,17,23,.95);border:1px solid var(--border2);
-  border-radius:var(--rs);padding:.5rem .8rem;
-  font-size:.8rem;color:var(--text);
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:var(--rs);padding:.45rem .75rem;
+  font-size:.78rem;color:var(--text);
   display:none;white-space:nowrap;z-index:30;
-  backdrop-filter:blur(8px);
+  box-shadow:0 4px 16px var(--shadow);
 }
-#tooltip .tp-name{font-weight:700;font-size:.88rem;margin-bottom:.15rem}
-#tooltip .tp-sub{color:var(--text3);font-size:.72rem}
+#tooltip .tp-name{font-weight:700;font-size:.85rem;margin-bottom:.1rem}
+#tooltip .tp-sub{color:var(--text3);font-size:.7rem}
 #tooltip .tp-plate{
   display:inline-block;background:var(--red);color:#fff;
-  font-size:.68rem;font-weight:700;padding:.1rem .35rem;
-  border-radius:3px;margin-left:.4rem;vertical-align:middle;
+  font-size:.65rem;font-weight:700;padding:.1rem .32rem;
+  border-radius:3px;margin-left:.35rem;vertical-align:middle;
 }
 
-/* Map legend */
-.map-legend{
-  display:flex;gap:1.2rem;align-items:center;
-  font-size:.72rem;color:var(--text3);padding:.2rem 0;
-}
-.leg-dot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:.3rem}
-
-/* ── LIST ── */
+/* ── PROVINCE LIST (below map) ── */
 .provinces-list{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
-  gap:.5rem;margin-top:.3rem;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));
+  gap:.45rem;padding:.75rem 1.2rem 1rem;
+  max-width:1100px;margin:0 auto;width:100%;
 }
 .pc{
   background:var(--card);border:1px solid var(--border);border-radius:var(--rs);
-  padding:.7rem .85rem;cursor:pointer;transition:all .15s;
+  padding:.65rem .8rem;cursor:pointer;transition:all .13s;
 }
-.pc:hover{border-color:var(--red);background:var(--bg3);transform:translateY(-1px)}
-.pc.active{border-color:var(--red);background:rgba(232,81,42,.1)}
+.pc:hover{border-color:var(--red);background:var(--bg3)}
+.pc.active{border-color:var(--red);background:rgba(232,81,42,.08)}
 .pc-pl{
   display:inline-block;background:var(--red);color:#fff;
-  font-size:.6rem;font-weight:700;padding:.1rem .35rem;
-  border-radius:3px;margin-bottom:.35rem;
+  font-size:.58rem;font-weight:700;padding:.1rem .32rem;
+  border-radius:3px;margin-bottom:.3rem;
 }
-.pc-name{font-size:.85rem;font-weight:600;margin-bottom:.15rem}
-.pc-sub{font-size:.66rem;color:var(--text3)}
-.no-res{grid-column:1/-1;text-align:center;color:var(--text3);padding:2rem;font-size:.88rem}
+.pc-name{font-size:.82rem;font-weight:600;margin-bottom:.1rem}
+.pc-sub{font-size:.63rem;color:var(--text3)}
+.no-res{grid-column:1/-1;text-align:center;color:var(--text3);padding:2rem;font-size:.86rem}
 
-/* ── DETAIL VIEW ── */
-.detail-header{
-  display:flex;align-items:center;gap:1rem;
-  padding:.85rem 1.5rem;
-  background:var(--bg2);border-bottom:1px solid var(--border);
-  position:sticky;top:0;z-index:20;
-}
-.back-btn{
-  display:flex;align-items:center;gap:.35rem;
-  background:var(--bg3);border:1px solid var(--border2);
-  border-radius:50px;padding:.38rem 1rem;
-  color:var(--text);font-size:.82rem;font-weight:500;
-  cursor:pointer;transition:all .15s;text-decoration:none;white-space:nowrap;
-}
-.back-btn:hover{background:var(--red);border-color:var(--red);color:#fff}
-.back-btn svg{width:14px;height:14px;flex-shrink:0}
-.dh-info{flex:1;min-width:0}
-.dh-info h2{font-size:1.15rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dh-info p{font-size:.73rem;color:var(--text3)}
-.plate-big{
-  background:var(--red);color:#fff;font-size:1.1rem;font-weight:800;
-  padding:.4rem .85rem;border-radius:var(--rs);letter-spacing:1px;
-  min-width:52px;text-align:center;flex-shrink:0;
+/* ── DETAIL PANEL ── */
+#detail-panel{
+  display:none;
+  max-width:1100px;margin:0 auto;width:100%;
+  padding:0 1.2rem 2rem;
 }
 
-.detail-body{max-width:860px;margin:0 auto;padding:1.3rem 1.5rem;width:100%}
+.detail-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  overflow:hidden;
+}
 
-/* Meta row */
-.meta-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.6rem;margin-bottom:1.2rem}
-.mc{background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:.75rem .9rem}
-.mc .ml{font-size:.64rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.25rem}
-.mc .mv{font-size:.9rem;font-weight:600}
+/* Detail top bar */
+.detail-topbar{
+  display:flex;align-items:center;gap:.9rem;
+  padding:.85rem 1.1rem;
+  border-bottom:1px solid var(--border);
+  background:var(--bg3);
+}
+.close-btn{
+  display:flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:50%;
+  background:var(--bg2);border:1px solid var(--border2);
+  cursor:pointer;color:var(--text2);transition:all .15s;flex-shrink:0;
+}
+.close-btn:hover{background:var(--red);border-color:var(--red);color:#fff}
+.close-btn svg{width:13px;height:13px}
+.dtb-name{font-size:1.1rem;font-weight:700;flex:1;min-width:0}
+.dtb-region{font-size:.72rem;color:var(--text3)}
+.dtb-plate{
+  background:var(--red);color:#fff;font-size:1rem;font-weight:800;
+  padding:.35rem .75rem;border-radius:var(--rs);letter-spacing:1px;flex-shrink:0;
+}
+
+/* Detail body */
+.detail-body{padding:1rem 1.1rem}
+
+.meta-row{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+  gap:.5rem;margin-bottom:1rem;
+}
+.mc{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:.65rem .8rem}
+.mc .ml{font-size:.6rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.2rem}
+.mc .mv{font-size:.88rem;font-weight:600}
 .mc .mv.g{color:var(--gold)}
 .mc .mv.t{color:var(--teal)}
 
-/* Slogan */
 .slogan-box{
-  background:linear-gradient(135deg,rgba(232,81,42,.1),rgba(232,81,42,.04));
-  border:1px solid rgba(232,81,42,.25);border-radius:var(--r);
-  padding:.85rem 1.1rem;margin-bottom:1.2rem;
-  font-style:italic;color:#ff8c6e;font-size:.95rem;
+  background:rgba(232,81,42,.07);
+  border:1px solid rgba(232,81,42,.22);border-radius:var(--rs);
+  padding:.75rem 1rem;margin-bottom:1rem;
+  font-style:italic;color:var(--red);font-size:.9rem;
 }
+body.light .slogan-box{color:#c0390f}
 
-/* Section */
 .sec-title{
-  font-size:.68rem;font-weight:700;color:var(--text3);
+  font-size:.65rem;font-weight:700;color:var(--text3);
   text-transform:uppercase;letter-spacing:.8px;
-  margin-bottom:.7rem;display:flex;align-items:center;gap:.5rem;
+  margin-bottom:.6rem;display:flex;align-items:center;gap:.5rem;
 }
 .sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
 
-/* Facts */
-.facts-list{display:flex;flex-direction:column;gap:.4rem;margin-bottom:1.2rem}
+.facts-list{display:flex;flex-direction:column;gap:.35rem;margin-bottom:1rem}
 .fact{
   background:var(--card);border:1px solid var(--border);
   border-left:3px solid var(--teal);
   border-radius:0 var(--rs) var(--rs) 0;
-  padding:.65rem .9rem;font-size:.84rem;line-height:1.55;
-  transition:border-left-color .15s;
+  padding:.6rem .85rem;font-size:.82rem;line-height:1.55;
+  transition:border-left-color .13s;
 }
 .fact:hover{border-left-color:var(--red)}
 
-/* Districts */
-.dist-wrap{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:1.5rem}
+.dist-wrap{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.5rem}
 .dtag{
   background:var(--bg3);border:1px solid var(--border);border-radius:50px;
-  padding:.25rem .65rem;font-size:.73rem;color:var(--text2);
-  transition:all .15s;cursor:default;
+  padding:.22rem .6rem;font-size:.7rem;color:var(--text2);transition:all .13s;
 }
 .dtag:hover{border-color:var(--border2);color:var(--text)}
 
-/* Responsive */
 @media(max-width:600px){
-  .header-stats{gap:.8rem}
-  .hstat-n{font-size:.85rem}
-  .provinces-list{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+  .header-stats{gap:.7rem}
+  .provinces-list{grid-template-columns:repeat(auto-fill,minmax(105px,1fr))}
+  .meta-row{grid-template-columns:repeat(3,1fr)}
 }
 </style>
 </head>
 <body>
 
-<!-- ══════════════ MAP VIEW ══════════════ -->
-<div id="map-view">
-  <header class="app-header">
-    <div class="app-title">Türkiye <span>İller</span> Haritası</div>
+<header class="app-header">
+  <div class="app-title">Türkiye <span>İller</span> Haritası</div>
+  <div class="header-right">
     <div class="header-stats">
       <div class="hstat"><div class="hstat-n">81</div><div class="hstat-l">İl</div></div>
-      <div class="hstat"><div class="hstat-n" id="hs-bilgi">496</div><div class="hstat-l">Bilgi</div></div>
-      <div class="hstat"><div class="hstat-n" id="hs-ilce">962</div><div class="hstat-l">İlçe</div></div>
+      <div class="hstat"><div class="hstat-n" id="hs-bilgi">–</div><div class="hstat-l">Bilgi</div></div>
+      <div class="hstat"><div class="hstat-n" id="hs-ilce">–</div><div class="hstat-l">İlçe</div></div>
     </div>
-  </header>
-
-  <div class="controls">
-    <div class="search-box">
-      <span class="si">🔍</span>
-      <input type="text" id="search-inp" placeholder="İl ara... (Ankara, İstanbul, 34...)" autocomplete="off">
-    </div>
-    <div class="region-row" id="region-row"></div>
+    <button class="theme-btn" id="theme-btn">🌙 Koyu</button>
   </div>
+</header>
 
-  <div class="map-wrap">
-    <div class="map-svg-wrap">
-      <svg id="turkey-svg" viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
-        <!-- paths injected by JS -->
-      </svg>
-      <div id="tooltip">
-        <div class="tp-name" id="tp-name">–</div>
-        <div class="tp-sub" id="tp-sub">–</div>
+<div class="controls">
+  <div class="search-box">
+    <span class="si">🔍</span>
+    <input type="text" id="search-inp" placeholder="İl ara… (Ankara, İstanbul, 34…)" autocomplete="off">
+  </div>
+  <div class="region-row" id="region-row"></div>
+</div>
+
+<div class="map-wrap">
+  <div class="map-svg-wrap">
+    <svg id="turkey-svg" viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="tooltip">
+      <div class="tp-name" id="tp-name">–</div>
+      <div class="tp-sub" id="tp-sub">–</div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail panel inline -->
+<div id="detail-panel">
+  <div class="detail-card">
+    <div class="detail-topbar">
+      <button class="close-btn" id="close-btn" title="Kapat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+      <div style="flex:1;min-width:0">
+        <div class="dtb-name" id="d-name">–</div>
+        <div class="dtb-region" id="d-region">–</div>
       </div>
+      <div class="dtb-plate" id="d-plate">00</div>
     </div>
-    <div class="map-legend">
-      <span><span class="leg-dot" style="background:#1e3a5f"></span>Normal</span>
-      <span><span class="leg-dot" style="background:#2563a8"></span>Üzerine gelindi</span>
-      <span><span class="leg-dot" style="background:#e8512a"></span>Seçili</span>
+    <div class="detail-body">
+      <div class="meta-row" id="d-meta"></div>
+      <div class="slogan-box" id="d-slogan"></div>
+      <div class="sec-title">Öne Çıkan Bilgiler</div>
+      <div class="facts-list" id="d-facts"></div>
+      <div class="sec-title">İlçeler</div>
+      <div class="dist-wrap" id="d-dist"></div>
     </div>
-    <div class="provinces-list" id="plist"></div>
   </div>
 </div>
 
-<!-- ══════════════ DETAIL VIEW ══════════════ -->
-<div id="detail-view">
-  <div class="detail-header">
-    <button class="back-btn" id="back-btn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 12H5M5 12l7-7M5 12l7 7"/>
-      </svg>
-      Haritaya dön
-    </button>
-    <div class="dh-info">
-      <h2 id="d-name">–</h2>
-      <p id="d-region">–</p>
-    </div>
-    <div class="plate-big" id="d-plate">00</div>
-  </div>
-  <div class="detail-body">
-    <div class="meta-row" id="d-meta"></div>
-    <div class="slogan-box" id="d-slogan"></div>
-    <div class="sec-title">Öne Çıkan Bilgiler</div>
-    <div class="facts-list" id="d-facts"></div>
-    <div class="sec-title">İlçeler</div>
-    <div class="dist-wrap" id="d-dist"></div>
-  </div>
-</div>
+<div class="provinces-list" id="plist"></div>
 
 <script src="data.js"></script>
 <script src="paths.js"></script>
 <script>
-// ── DATA PREP ──
-const totalBilgi = ILLER.reduce((s,i)=>s+i.bilgiler.length,0);
-const totalIlce  = ILLER.reduce((s,i)=>s+i.ilceler.length,0);
-document.getElementById('hs-bilgi').textContent = totalBilgi;
-document.getElementById('hs-ilce').textContent  = totalIlce;
+// ── STATS ──
+document.getElementById('hs-bilgi').textContent = ILLER.reduce((s,i)=>s+i.bilgiler.length,0);
+document.getElementById('hs-ilce').textContent  = ILLER.reduce((s,i)=>s+i.ilceler.length,0);
 
-// Map il name → data object (handle variations)
-const ilByName = {};
-ILLER.forEach(il => { ilByName[il.ad] = il; });
-
-// Alias for mismatches between SVG names and data names
-const SVG_ALIAS = {
-  'İçel (Mersin)': 'İçel (Mersin)',
+// ── THEME ──
+let isDark = true;
+const themeBtn = document.getElementById('theme-btn');
+themeBtn.onclick = () => {
+  isDark = !isDark;
+  document.body.classList.toggle('light', !isDark);
+  themeBtn.textContent = isDark ? '🌙 Koyu' : '☀️ Açık';
 };
 
-function getIlByMapName(mapName) {
-  return ilByName[mapName] || ilByName[SVG_ALIAS[mapName]] || null;
-}
+// ── DATA MAP ──
+const ilByName = {};
+ILLER.forEach(il => { ilByName[il.ad] = il; });
+function getIl(name) { return ilByName[name] || null; }
 
-// ── BUILD SVG ──
-const svg = document.getElementById('turkey-svg');
-const tooltip = document.getElementById('tooltip');
+// ── BUILD SVG PATHS ──
+const svg    = document.getElementById('turkey-svg');
+const tooltip= document.getElementById('tooltip');
 const tpName = document.getElementById('tp-name');
 const tpSub  = document.getElementById('tp-sub');
 
 MAP_PATHS.forEach(mp => {
-  const il = getIlByMapName(mp.name);
+  const il   = getIl(mp.name);
   const path = document.createElementNS('http://www.w3.org/2000/svg','path');
   path.setAttribute('d', mp.d);
   path.setAttribute('data-name', mp.name);
   if (il) {
-    path.setAttribute('title', il.ad);
-    path.addEventListener('mouseenter', (e) => onPathHover(e, path, il));
-    path.addEventListener('mouseleave', () => onPathLeave(path));
-    path.addEventListener('mousemove', (e) => moveTooltip(e));
-    path.addEventListener('click', () => showDetail(il));
+    path.addEventListener('mouseenter', e => onHover(e, path, il));
+    path.addEventListener('mouseleave', ()  => onLeave(path));
+    path.addEventListener('mousemove',  e => moveTip(e));
+    path.addEventListener('click',      ()  => showDetail(il, path));
   }
   svg.appendChild(path);
 });
 
 // ── TOOLTIP ──
-let activeHover = null;
-function onPathHover(e, path, il) {
-  activeHover = path;
-  path.classList.add('hovered');
+function onHover(e, path, il) {
   tpName.innerHTML = il.ad + `<span class="tp-plate">${il.plaka}</span>`;
   tpSub.textContent = il.bolge + ' · ' + il.ilceler.length + ' ilçe';
   tooltip.style.display = 'block';
-  moveTooltip(e);
+  moveTip(e);
 }
-function onPathLeave(path) {
-  path.classList.remove('hovered');
-  activeHover = null;
-  tooltip.style.display = 'none';
-}
-function moveTooltip(e) {
-  const wrap = document.querySelector('.map-svg-wrap');
-  const rect = wrap.getBoundingClientRect();
-  let x = e.clientX - rect.left + 14;
-  let y = e.clientY - rect.top - 10;
-  // Keep inside
-  if (x + 160 > rect.width) x = e.clientX - rect.left - 170;
-  if (y + 60 > rect.height) y = e.clientY - rect.top - 65;
+function onLeave() { tooltip.style.display = 'none'; }
+function moveTip(e) {
+  const r = document.querySelector('.map-svg-wrap').getBoundingClientRect();
+  let x = e.clientX - r.left + 14;
+  let y = e.clientY - r.top  - 10;
+  if (x + 165 > r.width)  x = e.clientX - r.left - 170;
+  if (y + 58  > r.height) y = e.clientY - r.top  - 62;
   tooltip.style.left = x + 'px';
   tooltip.style.top  = y + 'px';
 }
@@ -345,21 +353,20 @@ let activeRegion = 'Tümü';
 const regionRow = document.getElementById('region-row');
 regions.forEach(r => {
   const btn = document.createElement('button');
-  btn.className = 'rbtn' + (r==='Tümü'?' on':'');
+  btn.className = 'rbtn' + (r==='Tümü' ? ' on' : '');
   btn.textContent = r;
   btn.onclick = () => {
     activeRegion = r;
     document.querySelectorAll('.rbtn').forEach(b=>b.classList.remove('on'));
     btn.classList.add('on');
-    renderList();
-    updateMapColors();
+    renderList(); updateMap();
   };
   regionRow.appendChild(btn);
 });
 
 // ── SEARCH ──
 const searchInp = document.getElementById('search-inp');
-searchInp.addEventListener('input', () => { renderList(); updateMapColors(); });
+searchInp.addEventListener('input', () => { renderList(); updateMap(); });
 
 function getFiltered() {
   const q = searchInp.value.trim().toLowerCase();
@@ -370,8 +377,10 @@ function getFiltered() {
   });
 }
 
-// ── LIST ──
+// ── PROVINCE LIST ──
 const plist = document.getElementById('plist');
+let activeIl = null;
+
 function renderList() {
   const filtered = getFiltered();
   plist.innerHTML = '';
@@ -381,33 +390,41 @@ function renderList() {
   }
   filtered.forEach(il => {
     const d = document.createElement('div');
-    d.className = 'pc';
+    d.className = 'pc' + (activeIl?.ad === il.ad ? ' active' : '');
+    d.dataset.ilAd = il.ad;
     d.innerHTML = `<div class="pc-pl">${il.plaka}</div><div class="pc-name">${il.ad}</div><div class="pc-sub">${il.bolge}</div>`;
-    d.onclick = () => showDetail(il);
+    d.onclick = () => showDetail(il, null);
     plist.appendChild(d);
   });
 }
 
-// ── MAP COLORS based on filter ──
-function updateMapColors() {
-  const filtered = getFiltered();
-  const filteredNames = new Set(filtered.map(i=>i.ad));
-  // also handle alias
+// ── MAP DIM ──
+function updateMap() {
+  const names = new Set(getFiltered().map(i=>i.ad));
   svg.querySelectorAll('path').forEach(p => {
-    const name = p.getAttribute('data-name');
-    const il = getIlByMapName(name);
+    const il = getIl(p.getAttribute('data-name'));
     if (!il) return;
-    p.classList.remove('dimmed');
-    if (!filteredNames.has(il.ad)) {
-      p.classList.add('dimmed');
-    }
+    p.classList.toggle('dimmed', !names.has(il.ad));
   });
 }
 
-renderList();
+// ── DETAIL ──
+const detailPanel = document.getElementById('detail-panel');
 
-// ── DETAIL VIEW ──
-function showDetail(il) {
+function showDetail(il, clickedPath) {
+  activeIl = il;
+
+  // Update list highlights
+  document.querySelectorAll('.pc').forEach(c => {
+    c.classList.toggle('active', c.dataset.ilAd === il.ad);
+  });
+
+  // Update map highlight
+  svg.querySelectorAll('path').forEach(p => {
+    p.classList.toggle('active', getIl(p.getAttribute('data-name'))?.ad === il.ad);
+  });
+
+  // Fill detail card
   document.getElementById('d-name').textContent   = il.ad;
   document.getElementById('d-region').textContent = il.bolge + ' Bölgesi';
   document.getElementById('d-plate').textContent  = il.plaka;
@@ -419,33 +436,29 @@ function showDetail(il) {
     <div class="mc"><div class="ml">Nüfus</div><div class="mv">${il.nufus}</div></div>
     <div class="mc"><div class="ml">Yüzölçüm</div><div class="mv">${il.yuzolcum}</div></div>
     <div class="mc"><div class="ml">İlçe</div><div class="mv t">${il.ilceler.length}</div></div>
-    <div class="mc"><div class="ml">Bilgi sayısı</div><div class="mv g">${il.bilgiler.length}</div></div>
+    <div class="mc"><div class="ml">Bilgi</div><div class="mv g">${il.bilgiler.length}</div></div>
   `;
-
   document.getElementById('d-facts').innerHTML =
     il.bilgiler.map(b=>`<div class="fact">${b}</div>`).join('');
-
   document.getElementById('d-dist').innerHTML =
     il.ilceler.map(d=>`<div class="dtag">${d}</div>`).join('');
 
-  // Highlight on SVG
-  svg.querySelectorAll('path').forEach(p => p.classList.remove('active'));
-  svg.querySelectorAll('path').forEach(p => {
-    if (getIlByMapName(p.getAttribute('data-name'))?.ad === il.ad) p.classList.add('active');
-  });
-
-  document.getElementById('map-view').style.display  = 'none';
-  document.getElementById('detail-view').style.display = 'flex';
-  document.getElementById('detail-view').style.flexDirection = 'column';
-  window.scrollTo(0,0);
+  // Show panel and scroll to it
+  detailPanel.style.display = 'block';
+  setTimeout(() => {
+    detailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
 }
 
-document.getElementById('back-btn').onclick = () => {
-  document.getElementById('detail-view').style.display = 'none';
-  document.getElementById('map-view').style.display    = 'flex';
-  document.getElementById('map-view').style.flexDirection = 'column';
-  window.scrollTo(0,0);
+// ── CLOSE ──
+document.getElementById('close-btn').onclick = () => {
+  detailPanel.style.display = 'none';
+  activeIl = null;
+  svg.querySelectorAll('path').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.pc').forEach(c => c.classList.remove('active'));
 };
+
+renderList();
 </script>
 </body>
 </html>
