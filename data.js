@@ -1,4 +1,4 @@
-if (typeof ILLER === 'undefined') { var ILLER = [
+var ILLER = [
   {
     id: 1, ad: "Adana", plaka: "01", bolge: "Akdeniz",
     nufus: "2.265.022", yuzolcum: "14.030 km²", slogan: "Güneyin incisi",
@@ -1062,4 +1062,4 @@ if (typeof ILLER === 'undefined') { var ILLER = [
     ],
     ilceler: ["Merkez","Akçakoca","Cumayeri","Çilimli","Gölyaka","Gümüşova","Kaynaşlı","Yığılca"]
   }
-]; }
+];

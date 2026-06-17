@@ -1,632 +1,313 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Türkiye İller Rehberi</title>
+
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+#app { width: 100%; }
+.stats-row { display: flex; gap: 10px; padding: 12px 0 10px; justify-content: center; }
+.stat-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 8px 16px; text-align: center; min-width: 80px; }
+.stat-num { font-size: 20px; font-weight: 500; color: var(--color-text-primary); }
+.stat-lbl { font-size: 11px; color: var(--color-text-secondary); margin-top: 1px; }
+.search-row { display: flex; gap: 8px; padding: 0 4px 10px; align-items: center; }
+.search-row input { flex: 1; }
+.region-row { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 4px 12px; }
+.rbtn { font-size: 12px; padding: 4px 12px; border-radius: 20px; cursor: pointer; border: 0.5px solid var(--color-border-secondary); background: transparent; color: var(--color-text-secondary); transition: all 0.15s; }
+.rbtn.active { background: #378ADD; border-color: #378ADD; color: #E6F1FB; }
+.rbtn:hover:not(.active) { background: var(--color-background-secondary); color: var(--color-text-primary); }
 
-  :root {
-    --bg: #0f1117;
-    --bg2: #161b27;
-    --bg3: #1e2535;
-    --card: #1a2032;
-    --border: rgba(255,255,255,0.08);
-    --border2: rgba(255,255,255,0.15);
-    --text: #e8eaf0;
-    --text2: #9ba3b8;
-    --text3: #6b7390;
-    --accent: #e8512a;
-    --accent2: #ff7043;
-    --gold: #f0a500;
-    --teal: #26c6a8;
-    --blue: #4a90d9;
-    --radius: 12px;
-    --radius-sm: 8px;
-  }
+#map-svg { width: 100%; height: auto; display: block; cursor: pointer; }
+.prov { transition: fill 0.12s; stroke: var(--color-background-primary); stroke-width: 0.5; }
+.prov:hover { opacity: 0.75; }
+.prov.selected { stroke: #0C447C; stroke-width: 1.5; }
 
-  body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* ===== MAP VIEW ===== */
-  #map-view {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .hero {
-    background: linear-gradient(135deg, #0f1117 0%, #1a1f2e 50%, #0f1117 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 2rem 1.5rem 1.5rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .hero::before {
-    content: '';
-    position: absolute;
-    top: -60px; left: 50%;
-    transform: translateX(-50%);
-    width: 600px; height: 200px;
-    background: radial-gradient(ellipse, rgba(232,81,42,0.12) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .hero h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    margin-bottom: 0.4rem;
-  }
-
-  .hero h1 span { color: var(--accent); }
-
-  .hero p {
-    color: var(--text2);
-    font-size: 0.95rem;
-  }
-
-  .stats-bar {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin-top: 1.2rem;
-  }
-
-  .stat {
-    text-align: center;
-  }
-
-  .stat-num {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--gold);
-  }
-
-  .stat-label {
-    font-size: 0.72rem;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  /* Search */
-  .search-wrap {
-    padding: 1.2rem 1.5rem 0;
-    max-width: 520px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  .search-box {
-    position: relative;
-  }
-
-  .search-box input {
-    width: 100%;
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    border-radius: 50px;
-    padding: 0.7rem 1.2rem 0.7rem 3rem;
-    color: var(--text);
-    font-size: 0.95rem;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .search-box input:focus { border-color: var(--accent); }
-
-  .search-icon {
-    position: absolute;
-    left: 1rem; top: 50%;
-    transform: translateY(-50%);
-    color: var(--text3);
-    font-size: 1rem;
-  }
-
-  /* Region filter */
-  .region-wrap {
-    padding: 1rem 1.5rem;
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  .region-btn {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 50px;
-    padding: 0.35rem 0.9rem;
-    font-size: 0.78rem;
-    color: var(--text2);
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-
-  .region-btn:hover { border-color: var(--border2); color: var(--text); }
-  .region-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-
-  /* Grid */
-  .provinces-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 0.75rem;
-    padding: 0.5rem 1.5rem 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  .province-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem;
-    cursor: pointer;
-    transition: all 0.18s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .province-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: var(--accent);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.2s;
-  }
-
-  .province-card:hover {
-    border-color: var(--border2);
-    transform: translateY(-2px);
-    background: var(--bg3);
-  }
-
-  .province-card:hover::before { transform: scaleX(1); }
-
-  .province-plate {
-    display: inline-block;
-    background: var(--accent);
-    color: #fff;
-    font-size: 0.65rem;
-    font-weight: 700;
-    padding: 0.15rem 0.45rem;
-    border-radius: 4px;
-    margin-bottom: 0.5rem;
-    letter-spacing: 0.5px;
-  }
-
-  .province-name {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-    color: var(--text);
-  }
-
-  .province-region {
-    font-size: 0.7rem;
-    color: var(--text3);
-  }
-
-  .province-count {
-    margin-top: 0.5rem;
-    font-size: 0.7rem;
-    color: var(--teal);
-  }
-
-  /* ===== DETAIL VIEW ===== */
-  #detail-view {
-    display: none;
-    min-height: 100vh;
-    flex-direction: column;
-  }
-
-  .detail-header {
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    padding: 1rem 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-
-  .back-btn {
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    border-radius: 50px;
-    padding: 0.4rem 1rem 0.4rem 0.7rem;
-    color: var(--text);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: all 0.15s;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .back-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-  .back-btn svg { width: 16px; height: 16px; }
-
-  .detail-header-info { flex: 1; }
-
-  .detail-header-info h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
-  }
-
-  .detail-header-info span {
-    font-size: 0.78rem;
-    color: var(--text3);
-  }
-
-  .plate-badge {
-    background: var(--accent);
-    color: #fff;
-    font-size: 1.1rem;
-    font-weight: 800;
-    padding: 0.4rem 0.8rem;
-    border-radius: var(--radius-sm);
-    letter-spacing: 1px;
-    min-width: 52px;
-    text-align: center;
-  }
-
-  /* Detail body */
-  .detail-body {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 1.5rem;
-    width: 100%;
-  }
-
-  /* Meta cards */
-  .meta-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .meta-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.85rem 1rem;
-  }
-
-  .meta-card .label {
-    font-size: 0.68rem;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.3rem;
-  }
-
-  .meta-card .value {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text);
-  }
-
-  .meta-card .value.accent { color: var(--gold); }
-
-  /* Slogan */
-  .slogan-box {
-    background: linear-gradient(135deg, rgba(232,81,42,0.12), rgba(232,81,42,0.05));
-    border: 1px solid rgba(232,81,42,0.3);
-    border-radius: var(--radius);
-    padding: 1rem 1.2rem;
-    margin-bottom: 1.5rem;
-    font-style: italic;
-    color: var(--accent2);
-    font-size: 1rem;
-  }
-
-  /* Facts */
-  .section-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  .facts-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .fact-item {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--teal);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    padding: 0.75rem 1rem;
-    font-size: 0.88rem;
-    line-height: 1.5;
-    color: var(--text);
-    transition: border-left-color 0.15s;
-  }
-
-  .fact-item:hover { border-left-color: var(--accent); }
-
-  /* Districts */
-  .districts-wrap {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-bottom: 2rem;
-  }
-
-  .district-tag {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 50px;
-    padding: 0.3rem 0.75rem;
-    font-size: 0.78rem;
-    color: var(--text2);
-    transition: all 0.15s;
-  }
-
-  .district-tag:hover {
-    border-color: var(--border2);
-    color: var(--text);
-    background: var(--card);
-  }
-
-  /* Counter badge */
-  .count-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 50px;
-    padding: 0.25rem 0.75rem;
-    font-size: 0.75rem;
-    color: var(--text2);
-    margin-bottom: 1rem;
-  }
-
-  .count-badge strong { color: var(--gold); }
-
-  /* No results */
-  .no-results {
-    text-align: center;
-    color: var(--text3);
-    padding: 3rem 1rem;
-    grid-column: 1 / -1;
-  }
-
-  .no-results .emoji { font-size: 2rem; margin-bottom: 0.5rem; }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+.detail-panel { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 14px 16px; margin-top: 10px; }
+.dp-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.dp-plate { background: #378ADD; color: #E6F1FB; font-size: 18px; font-weight: 500; padding: 4px 12px; border-radius: var(--border-radius-md); min-width: 48px; text-align: center; }
+.dp-title { font-size: 17px; font-weight: 500; color: var(--color-text-primary); }
+.dp-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 1px; }
+.dp-slogan { font-size: 13px; color: var(--color-text-secondary); font-style: italic; padding: 8px 12px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); margin-bottom: 10px; border-left: 3px solid #378ADD; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px,1fr)); gap: 8px; margin-bottom: 10px; }
+.meta-item { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 8px 10px; }
+.meta-item .ml { font-size: 10px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+.meta-item .mv { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-top: 2px; }
+.sec-label { font-size: 10px; font-weight: 500; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.6px; margin: 10px 0 6px; }
+.facts-list { display: flex; flex-direction: column; gap: 5px; }
+.fact { font-size: 13px; color: var(--color-text-primary); padding: 6px 10px; background: var(--color-background-secondary); border-radius: 0; border-left: 2.5px solid #1D9E75; line-height: 1.5; }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag { font-size: 11px; color: var(--color-text-secondary); background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: 20px; padding: 3px 9px; }
+.no-sel { text-align: center; padding: 20px; color: var(--color-text-tertiary); font-size: 13px; }
+.back-btn { font-size: 12px; padding: 4px 12px; cursor: pointer; border-radius: 20px; border: 0.5px solid var(--color-border-secondary); background: transparent; color: var(--color-text-secondary); margin-bottom: 10px; display: none; }
+.back-btn:hover { background: var(--color-background-secondary); }
 </style>
-</head>
-<body>
 
-<!-- MAP VIEW (province list) -->
-<div id="map-view">
-  <div class="hero">
-    <h1>Türkiye <span>İller</span> Rehberi</h1>
-    <p>81 il · plaka kodları · ilçeler · ünlü özellikler</p>
-    <div class="stats-bar">
-      <div class="stat">
-        <div class="stat-num" id="total-il">81</div>
-        <div class="stat-label">İl</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num" id="total-bilgi">–</div>
-        <div class="stat-label">Bilgi</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num" id="total-ilce">–</div>
-        <div class="stat-label">İlçe</div>
-      </div>
-    </div>
+<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Türkiye 81 il interaktif haritası — ile tıklayarak bilgi edinin</h2>
+<div id="app">
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-num">81</div><div class="stat-lbl">İl</div></div>
+    <div class="stat-card"><div class="stat-num">496</div><div class="stat-lbl">Bilgi</div></div>
+    <div class="stat-card"><div class="stat-num">962</div><div class="stat-lbl">İlçe</div></div>
   </div>
 
-  <div class="search-wrap">
-    <div class="search-box">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="search-input" placeholder="İl ara... (örn: Ankara, Antalya)" autocomplete="off">
-    </div>
+  <div class="search-row">
+    <input type="text" id="srch" placeholder="İl ara..." style="font-size:13px;" />
+  </div>
+  <div class="region-row" id="rfilter"></div>
+
+  <button class="back-btn" id="backBtn" onclick="clearSel()">← Haritaya dön</button>
+
+  <div id="map-wrap">
+    <svg id="map-svg" viewBox="0 0 1000 480" xmlns="http://www.w3.org/2000/svg">
+    </svg>
   </div>
 
-  <div class="region-wrap" id="region-filters"></div>
-
-  <div class="provinces-grid" id="provinces-grid"></div>
-</div>
-
-<!-- DETAIL VIEW -->
-<div id="detail-view">
-  <div class="detail-header">
-    <button class="back-btn" id="back-btn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 12H5M5 12l7-7M5 12l7 7"/>
-      </svg>
-      Haritaya dön
-    </button>
-    <div class="detail-header-info">
-      <h2 id="detail-name">–</h2>
-      <span id="detail-region">–</span>
-    </div>
-    <div class="plate-badge" id="detail-plate">00</div>
-  </div>
-
-  <div class="detail-body">
-    <div class="meta-row" id="detail-meta"></div>
-    <div class="slogan-box" id="detail-slogan"></div>
-
-    <div class="section-title">Öne Çıkan Bilgiler</div>
-    <div class="facts-list" id="detail-facts"></div>
-
-    <div class="section-title">İlçeler</div>
-    <div class="districts-wrap" id="detail-districts"></div>
+  <div class="detail-panel" id="dp">
+    <div class="no-sel">Haritadan bir il seçin veya arama yapın</div>
   </div>
 </div>
 
-<script src="data.js"></script>
 <script>
-  const mapView = document.getElementById('map-view');
-  const detailView = document.getElementById('detail-view');
-  const grid = document.getElementById('provinces-grid');
-  const searchInput = document.getElementById('search-input');
-  const regionFiltersEl = document.getElementById('region-filters');
-  let activeRegion = 'Tümü';
+const ILLER_DATA = [
+  {id:1,ad:"Adana",plaka:"01",bolge:"Akdeniz",nufus:"2.265.022",yuzolcum:"14.030 km²",slogan:"Güneyin incisi",bilgiler:["Türkiye'nin 4. büyük şehridir.","Seyhan ve Ceyhan nehirleri şehirden geçer.","Adana kebabı dünya genelinde ünlüdür.","Taş Köprü, Roma döneminden kalma tarihi bir köprüdür.","Portakal ve narenciye üretiminde öne gelen şehirdir.","Karataş ilçesi Akdeniz'in güzel plajlarına sahiptir."],ilceler:["Seyhan","Çukurova","Yüreğir","Sarıçam","Ceyhan","Kozan","Karataş","Pozantı","Aladağ","Feke","Karaisalı","Saimbeyli","Tufanbeyli","Yumurtalık"]},
+  {id:2,ad:"Adıyaman",plaka:"02",bolge:"Güneydoğu Anadolu",nufus:"636.401",yuzolcum:"7.614 km²",slogan:"Nemrut'un kenti",bilgiler:["Nemrut Dağı UNESCO Dünya Mirası'ndadır.","Dev kral heykelleri antik dönemden kalmadır.","Atatürk Barajı ile büyük bir göle sahiptir.","Kahta ilçesi Nemrut turizmi için ana üstür.","Besni üzümüyle ünlüdür."],ilceler:["Merkez","Besni","Gölbaşı","Kahta","Sincik","Tut","Çelikhan","Gerger","Samsat"]},
+  {id:3,ad:"Afyonkarahisar",plaka:"03",bolge:"Ege",nufus:"752.191",yuzolcum:"14.230 km²",slogan:"Kaymak ve şarabın kenti",bilgiler:["Türkiye'nin termal turizm merkezidir.","Afyon sucuğu ve pastırması coğrafi işaretlidir.","Kaymak tatlıları dünyaca bilinir.","Kurtuluş Savaşı'nın kritik muharebelerine sahne oldu.","Marmara mermer ocakları burada yer alır."],ilceler:["Merkez","Bolvadin","Çay","Dinar","Emirdağ","Sandıklı","Sultandağı","Şuhut"]},
+  {id:4,ad:"Ağrı",plaka:"04",bolge:"Doğu Anadolu",nufus:"538.148",yuzolcum:"11.376 km²",slogan:"Ağrı Dağı'nın gölgesinde",bilgiler:["Türkiye'nin en yüksek dağı Ağrı (5137 m) burada.","Nuh'un Gemisi efsanesiyle dünya mitolojisinde önemlidir.","İran ve Ermenistan sınırına yakındır."],ilceler:["Merkez","Diyadin","Doğubayazıt","Eleşkirt","Hamur","Patnos","Taşlıçay","Tutak"]},
+  {id:5,ad:"Amasya",plaka:"05",bolge:"Karadeniz",nufus:"330.949",yuzolcum:"5.702 km²",slogan:"Şehzadeler şehri",bilgiler:["Osmanlı şehzadelerinin eğitim merkezi olmuştur.","Yeşilırmak boyunca uzanan tarihi evler görülmeye değerdir.","Kaya mezarları şehre özgü tarihi dokudur.","Amasya elması coğrafi işaretli ürünüdür."],ilceler:["Merkez","Göynücek","Gümüşhacıköy","Hamamözü","Merzifon","Suluova","Taşova"]},
+  {id:6,ad:"Ankara",plaka:"06",bolge:"İç Anadolu",nufus:"5.747.325",yuzolcum:"25.706 km²",slogan:"Cumhuriyetin başkenti",bilgiler:["Türkiye Cumhuriyeti'nin başkentidir.","Anıtkabir Atatürk'ün anıt mezarıdır.","TBMM Ankara'da bulunmaktadır.","Angora keçisinin yünü olan Ankara moherinin anavatanıdır.","Türkiye'nin en büyük ikinci şehridir."],ilceler:["Çankaya","Keçiören","Yenimahalle","Mamak","Altındağ","Sincan","Etimesgut","Pursaklar","Gölbaşı","Polatlı","Beypazarı"]},
+  {id:7,ad:"Antalya",plaka:"07",bolge:"Akdeniz",nufus:"2.688.004",yuzolcum:"20.910 km²",slogan:"Türkiye'nin turizm başkenti",bilgiler:["Türkiye'nin en çok turist çeken ilidir.","Dünyaca ünlü plajları ve mavi bayraklı kumsalları vardır.","Kaleiçi tarihi surları Romalı döneme uzanır.","Aspendos Antik Tiyatrosu olağanüstü korunmuştur.","Olimpos ve Phaselis antik kentleri kıyıdadır."],ilceler:["Muratpaşa","Kepez","Konyaaltı","Alanya","Manavgat","Serik","Kaş","Kemer","Side","Finike"]},
+  {id:8,ad:"Artvin",plaka:"08",bolge:"Karadeniz",nufus:"168.070",yuzolcum:"7.436 km²",slogan:"Kafkasların kapısı",bilgiler:["Kaçkar Dağları ülkenin en yüksek dağ silsilesindedir.","Borcka Barajı muhteşem manzarasıyla ünlüdür.","Kafkasör Kültür Festivali geleneksel boğa güreşleriyle bilinir.","Sarp sınır kapısı Gürcistan'a geçişi sağlar."],ilceler:["Merkez","Ardanuç","Arhavi","Borçka","Hopa","Murgul","Şavşat","Yusufeli"]},
+  {id:9,ad:"Aydın",plaka:"09",bolge:"Ege",nufus:"1.148.741",yuzolcum:"8.007 km²",slogan:"İncir ve zeytinin kenti",bilgiler:["Türkiye'nin en kaliteli kuru inciri burada üretilir.","Efes Antik Kenti UNESCO listesindedir.","Didim ve Kuşadası önemli tatil bölgeleridir.","Aydın zeytinyağı coğrafi işaretlidir."],ilceler:["Efeler","Nazilli","Söke","Kuşadası","Didim","İncirliova","Koçarlı","Germencik"]},
+  {id:10,ad:"Balıkesir",plaka:"10",bolge:"Marmara",nufus:"1.268.336",yuzolcum:"14.299 km²",slogan:"Zeytinin ve tarihin kenti",bilgiler:["Türkiye'de zeytinyağı üretiminde önde gelir.","Erdek ve Avşa adaları Marmara Denizi'nin incileridir.","Ayvalık, Rum mimarisi ve tarihi dokusuyla öne çıkar.","Dursunbey ve Sındırgı kaplıcalarıyla bilinir."],ilceler:["Altıeylül","Karesi","Bandırma","Edremit","Gönen","Erdek","Ayvalık","Burhaniye"]},
+  {id:11,ad:"Bilecik",plaka:"11",bolge:"Marmara",nufus:"230.275",yuzolcum:"4.307 km²",slogan:"Osmanlı'nın doğduğu topraklar",bilgiler:["Osmanlı Devleti'nin kuruluş merkezi Söğüt burada.","Şeyh Edebali Türbesi İnegöl'e yakındır.","Ertuğrul Gazi Türbesi tarihi öneme sahiptir."],ilceler:["Merkez","Bozüyük","Gölpazarı","İnhisar","Osmaneli","Pazaryeri","Söğüt","Yenipazar"]},
+  {id:12,ad:"Bingöl",plaka:"12",bolge:"Doğu Anadolu",nufus:"279.399",yuzolcum:"8.125 km²",slogan:"Dağların kalbi",bilgiler:["Karasu ve Peri ırmaklarının kaynağı burada.","Yaylacılık ve hayvancılık temel geçim kaynağıdır.","Doğal ormanları ve yaylaları zengindir."],ilceler:["Merkez","Adaklı","Genç","Karlıova","Kiğı","Solhan","Yayladere","Yedisu"]},
+  {id:13,ad:"Bitlis",plaka:"13",bolge:"Doğu Anadolu",nufus:"339.283",yuzolcum:"6.707 km²",slogan:"Sigaranın ve eriştenin kenti",bilgiler:["Tatvan, Van Gölü kıyısında konumlanır.","Nemrut Krateri Gölü Türkiye'nin en büyük krater gölüdür.","Bitlis tütün tarihte ünlüydü.","Süphan Dağı 4.058 metre yüksekliğe ulaşır."],ilceler:["Merkez","Adilcevaz","Ahlat","Güroymak","Hizan","Mutki","Tatvan"]},
+  {id:14,ad:"Bolu",plaka:"14",bolge:"Batı Karadeniz",nufus:"323.992",yuzolcum:"11.051 km²",slogan:"Ormanların ve göllerin şehri",bilgiler:["Abant Gölü Türkiye'nin en güzel göllerinden biridir.","Yedigöller Milli Parkı muhteşem sonbahar manzarası sunar.","Kartalkaya kayak merkezi kış turizminde önemlidir.","Bolu aşçıları Osmanlı mutfağının ustalarıydı."],ilceler:["Merkez","Dörtdivan","Gerede","Göynük","Kıbrıscık","Mengen","Mudurnu","Seben"]},
+  {id:15,ad:"Burdur",plaka:"15",bolge:"Akdeniz",nufus:"270.350",yuzolcum:"6.887 km²",slogan:"Gölün kenti",bilgiler:["Burdur Gölü önemli bir kuş cenneti ve sulak alandır.","Sagalassos antik kenti bölgedeki en iyi korunmuş kentlerden biri.","Lavanta tarlaları turizm çeker.","Salda Gölü beyaz kumullarıyla 'Türkiye'nin Maledivleri' olarak anılır."],ilceler:["Merkez","Ağlasun","Altınyayla","Bucak","Çavdır","Çeltikçi","Gölhisar","Karamanlı","Kemer","Tefenni","Yeşilova"]},
+  {id:16,ad:"Bursa",plaka:"16",bolge:"Marmara",nufus:"3.194.720",yuzolcum:"11.043 km²",slogan:"Osmanlı'nın ilk başkenti",bilgiler:["Osmanlı Devleti'nin ilk başkentidir.","Uludağ Türkiye'nin en önemli kayak merkezidir.","İpek böcekçiliği ve ipekli dokuma tarihidir.","İskender kebabı Bursa'da icat edilmiştir.","Cumalıkızık köyü UNESCO Dünya Mirası'ndadır."],ilceler:["Osmangazi","Nilüfer","Yıldırım","Görükle","İnegöl","Gemlik","Mudanya","Orhangazi","Karacabey"]},
+  {id:17,ad:"Çanakkale",plaka:"17",bolge:"Marmara",nufus:"575.361",yuzolcum:"9.737 km²",slogan:"Çanakkale geçilmez",bilgiler:["Çanakkale Savaşları tarihin en önemli muharebelerindedir.","Gelibolu Yarımadası anma törenleriyle bilinir.","Truva Antik Kenti UNESCO listesindedir.","Boğaz köprüsü ve tarihi askeri miras ziyaretçi çeker."],ilceler:["Merkez","Biga","Çan","Gelibolu","Lapseki","Yenice","Ayvacık","Bayramiç","Bozcaada","Eceabat","Ezine","Gökçeada"]},
+  {id:18,ad:"Çankırı",plaka:"18",bolge:"İç Anadolu",nufus:"190.127",yuzolcum:"7.388 km²",slogan:"Tuzun kenti",bilgiler:["Tuz Mağarası Türkiye'nin en büyük tuz mağarasıdır.","Tarihi kervansarayları ipek yolu geleneğini yansıtır.","Ilgaz Dağı milli parkı kayak ve doğa turizmine ev sahipliği yapar."],ilceler:["Merkez","Atkaracalar","Bayramören","Çerkeş","Eldivan","Ilgaz","Kızılırmak","Korgun","Kurşunlu","Orta","Şabanözü","Yapraklı"]},
+  {id:19,ad:"Çorum",plaka:"19",bolge:"Karadeniz",nufus:"523.390",yuzolcum:"12.820 km²",slogan:"Hitit'in kenti",bilgiler:["Hattuşa başkentli Hitit Uygarlığı UNESCO listesindedir.","Hitit müzesi dünyanın önde gelen müzelerinden biridir.","Çorum leblebisi coğrafi işaretlidir.","Alacahöyük Tunç Çağı'nın önemli merkezidir."],ilceler:["Merkez","Alaca","Bayat","Boğazkale","Dodurga","İskilip","Kargı","Laçin","Mecitözü","Oğuzlar","Ortaköy","Osmancık","Sungurlu","Uğurludağ"]},
+  {id:20,ad:"Denizli",plaka:"20",bolge:"Ege",nufus:"1.069.536",yuzolcum:"11.868 km²",slogan:"Tekstilin ve travertenlerin şehri",bilgiler:["Pamukkale travertenleri ve Hierapolis UNESCO listesindedir.","Türkiye'nin önemli tekstil üretim merkezidir.","Sıcak su kaynakları termal turizmi geliştirir.","Laodikeia antik kenti önemli kazı alanıdır."],ilceler:["Merkez","Acıpayam","Babadağ","Bekilli","Beyağaç","Bozkurt","Buldan","Çal","Çameli","Çardak","Çivril","Güney","Honaz","Kale","Sarayköy","Serinhisar","Tavas"]},
+  {id:21,ad:"Diyarbakır",plaka:"21",bolge:"Güneydoğu Anadolu",nufus:"1.773.852",yuzolcum:"15.355 km²",slogan:"Siyah basaltın şehri",bilgiler:["Tarihi surlar ve Hevsel Bahçeleri UNESCO listesindedir.","Siyah bazalt taştan yapılmış surlar görkemlidir.","Dicle Nehri şehrin yanından geçer.","Diyarbakır karpuzu coğrafi işaretlidir."],ilceler:["Bağlar","Kayapınar","Sur","Yenişehir","Bismil","Çermik","Çınar","Çüngüş","Dicle","Eğil","Ergani","Hani","Hazro","Kocaköy","Kulp","Lice","Silvan"]},
+  {id:22,ad:"Edirne",plaka:"22",bolge:"Marmara",nufus:"421.296",yuzolcum:"6.241 km²",slogan:"Kırkpınar'ın kenti",bilgiler:["Kırkpınar Yağlı Güreş Festivali UNESCO mirası ve dünyanın en eski spor organizasyonlarından biridir.","Selimiye Camii Mimar Sinan'ın şaheseridir.","Üç kıtanın kesişim noktasındadır.","Tunca ve Meriç nehirlerinin birleştiği noktadadır."],ilceler:["Merkez","Enez","Havsa","İpsala","Keşan","Lalapaşa","Meriç","Süloğlu","Uzunköprü"]},
+  {id:23,ad:"Elazığ",plaka:"23",bolge:"Doğu Anadolu",nufus:"591.495",yuzolcum:"9.153 km²",slogan:"Fırat'ın kenarında",bilgiler:["Keban Baraj Gölü büyük bir elektrik kapasitesine sahiptir.","Harput kalesi ve tarihi şehri önemlidir.","Elazığ üzümü ve şarabı geleneksel lezzetlerdir."],ilceler:["Merkez","Ağın","Alacakaya","Arıcak","Baskil","Karakoçan","Keban","Kovancılar","Maden","Palu","Sivrice"]},
+  {id:24,ad:"Erzincan",plaka:"24",bolge:"Doğu Anadolu",nufus:"231.132",yuzolcum:"11.894 km²",slogan:"Çilek ve turşunun kenti",bilgiler:["Erzincan tulum peyniri coğrafi işaretlidir.","Çağlayan Kanyonu eşsiz doğal güzelliğe sahiptir.","1939 Erzincan depremi tarihin en yıkıcılarından biridir.","Kemah Kalesi Fırat kıyısında tarihi bir yapıdır."],ilceler:["Merkez","Çayırlı","İliç","Kemah","Kemaliye","Otlukbeli","Refahiye","Tercan","Üzümlü"]},
+  {id:25,ad:"Erzurum",plaka:"25",bolge:"Doğu Anadolu",nufus:"762.648",yuzolcum:"25.066 km²",slogan:"Doğunun kalesi",bilgiler:["Palandöken Dağı Türkiye'nin önemli kayak merkezlerinden biridir.","Erzurum Kongresi Milli Mücadele'nin başlangıcıdır.","Çifte Minareli Medrese Selçuklu mimarisinin şaheseridir.","Cağ kebabı Erzurum'a özgüdür."],ilceler:["Merkez","Aşkale","Aziziye","Çat","Hınıs","Horasan","İspir","Karaçoban","Karayazı","Köprüköy","Narman","Oltu","Olur","Pasinler","Pazaryolu","Şenkaya","Tekman","Tortum","Uzundere"]},
+  {id:26,ad:"Eskişehir",plaka:"26",bolge:"İç Anadolu",nufus:"906.611",yuzolcum:"13.652 km²",slogan:"Lületaşının ve öğrencilerin şehri",bilgiler:["Lületaşı dünyada yalnızca burada çıkarılır.","İki büyük üniversitesiyle Türkiye'nin gençlik kentidir.","Porsuk Nehri şehrin içinden geçer.","Modern tram sistemiyle mimari dönüşüme uğramıştır."],ilceler:["Odunpazarı","Tepebaşı","Alpu","Beylikova","Çifteler","Günyüzü","Han","İnönü","Mahmudiye","Mihalgazi","Mihalıççık","Sarıcakaya","Seyitgazi","Sivrihisar"]},
+  {id:27,ad:"Gaziantep",plaka:"27",bolge:"Güneydoğu Anadolu",nufus:"2.154.051",yuzolcum:"6.222 km²",slogan:"Baklava ve mozaiğin kenti",bilgiler:["Gaziantep mutfağı UNESCO Yaratıcı Şehirler ağındadır.","Zeugma Mozaik Müzesi dünyanın en büyük mozaik koleksiyonuna sahiptir.","Gaziantep fıstığı ve baklavası dünya çapında ünlüdür.","Tarihi Kapalı Çarşı ve bakırcılar çarşısı ziyaretçi çeker."],ilceler:["Şahinbey","Şehitkamil","Araban","İslahiye","Karkamış","Nizip","Nurdağı","Oğuzeli","Yavuzeli"]},
+  {id:28,ad:"Giresun",plaka:"28",bolge:"Karadeniz",nufus:"438.657",yuzolcum:"6.934 km²",slogan:"Fındığın anavatanı",bilgiler:["Giresun Türkiye'de fındığın anavatanı olarak kabul edilir.","Giresun Kalesi kıyı şeridine hâkimdir.","Giresun Adası Karadeniz'in nadir adalarından biridir.","Karadeniz hamsi mutfağın vazgeçilmezidir."],ilceler:["Merkez","Alucra","Bulancak","Çamoluk","Çanakçı","Dereli","Doğankent","Espiye","Eynesil","Görele","Güce","Keşap","Piraziz","Şebinkarahisar","Tirebolu","Yağlıdere"]},
+  {id:29,ad:"Gümüşhane",plaka:"29",bolge:"Karadeniz",nufus:"131.319",yuzolcum:"6.437 km²",slogan:"Dağların arasında maden kenti",bilgiler:["Gümüşhane tarihi boyunca gümüş madenciliğiyle tanınmıştır.","Karaca Mağarası büyüleyici sarkıt ve dikitlerle doludur.","Canca vişnesi coğrafi işaretlidir."],ilceler:["Merkez","Kelkit","Köse","Kürtün","Şiran","Torul"]},
+  {id:30,ad:"Hakkari",plaka:"30",bolge:"Doğu Anadolu",nufus:"280.704",yuzolcum:"7.121 km²",slogan:"Cilo'nun zirvesi",bilgiler:["Cilo-Sat Dağları Türkiye'nin yüksek dağ silsilelerindedir.","Uludoruk Zirvesi 4116 m ile Türkiye'nin ikinci yüksek tepesidir.","Türkiye'nin en az nüfuslu ve en sarp bölgelerindendir."],ilceler:["Merkez","Çukurca","Derecik","Şemdinli","Yüksekova"]},
+  {id:31,ad:"Hatay",plaka:"31",bolge:"Akdeniz",nufus:"1.686.043",yuzolcum:"5.867 km²",slogan:"Uygarlıkların kavşağı",bilgiler:["Antakya kadim bir merkez, tarihte Antioch olarak bilindi.","Dünyanın ilk Hristiyan kilisesi Hatay'da olduğu söylenir.","Amik Ovası verimli tarım arazisidir.","Türkiye'nin en çeşitli mutfak kültürüne sahip illerinden biri."],ilceler:["Antakya","İskenderun","Dörtyol","Erzin","Hassa","Kırıkhan","Kumlu","Payas","Reyhanlı","Samandağ","Yayladağı"]},
+  {id:32,ad:"Isparta",plaka:"32",bolge:"Akdeniz",nufus:"433.942",yuzolcum:"8.933 km²",slogan:"Gülün başkenti",bilgiler:["Türkiye'nin gül yağı üretiminin merkezi burada.","Eğirdir Gölü tatlı su balıkçılığı açısından önemlidir.","Davraz Dağı kayak tesisleri meşhurdur.","Isparta halısı geleneksel el sanatıdır."],ilceler:["Merkez","Aksu","Atabey","Eğirdir","Gelendost","Gönen","Keçiborlu","Senirkent","Sütçüler","Şarkikaraağaç","Uluborlu","Yalvaç","Yenişarbademli"]},
+  {id:33,ad:"Mersin",plaka:"33",bolge:"Akdeniz",nufus:"1.918.947",yuzolcum:"15.853 km²",slogan:"Akdeniz'in incisi",bilgiler:["Türkiye'nin en büyük limanlarından birine sahiptir.","Cennet ve Cehennem obrukları ilgi çekici doğal oluşumlardır.","Kızkalesi deniz üzerindeki tarihi kale ile ünlüdür.","Silifke yoğurdu ve Mut inciri coğrafi işaretlidir."],ilceler:["Akdeniz","Mezitli","Toroslar","Yenişehir","Anamur","Aydıncık","Bozyazı","Çamlıyayla","Erdemli","Gülnar","Mut","Silifke","Tarsus"]},
+  {id:34,ad:"İstanbul",plaka:"34",bolge:"Marmara",nufus:"15.655.924",yuzolcum:"5.461 km²",slogan:"Dünyanın merkezi",bilgiler:["Türkiye'nin en büyük ve en kalabalık şehridir.","İki kıtaya yayılan tek dünya metropolüdür.","Ayasofya, Topkapı Sarayı ve Kapalıçarşı dünya mirası.","Boğaz köprüleri Asya ve Avrupa'yı bağlar.","Dünyanın en işlek su yollarından biri olan Boğaz burada."],ilceler:["Fatih","Beyoğlu","Beşiktaş","Kadıköy","Üsküdar","Bakırköy","Bağcılar","Bahçelievler","Esenler","Gaziosmanpaşa","Maltepe","Pendik","Ümraniye","Sultanbeyli","Sarıyer","Şişli"]},
+  {id:35,ad:"İzmir",plaka:"35",bolge:"Ege",nufus:"4.462.056",yuzolcum:"11.891 km²",slogan:"İnci gibi körfez",bilgiler:["Türkiye'nin üçüncü büyük şehridir.","Efes Antik Kenti yakınındadır.","Bergama ve Efes önemli arkeolojik alanlardır.","İzmir fuarı önemli uluslararası etkinliktir."],ilceler:["Konak","Karşıyaka","Bornova","Buca","Karabağlar","Torbalı","Çiğli","Gaziemir","Balçova","Narlıdere","Güzelbahçe","Urla","Çeşme","Alaçatı"]},
+  {id:36,ad:"Kars",plaka:"36",bolge:"Doğu Anadolu",nufus:"273.071",yuzolcum:"9.587 km²",slogan:"Dondurmanın ve karın kenti",bilgiler:["Kars gravyeri ve dondurması coğrafi işaretlidir.","Ani Harabeleri UNESCO listesinde miras alanıdır.","Çıldır Gölü kışın yüzeyi donan en büyük gölümüzdür.","Karstaki Rus mimarisi 19. yüzyıldan kalmadır."],ilceler:["Merkez","Akyaka","Arpaçay","Digor","Kağızman","Sarıkamış","Selim","Susuz"]},
+  {id:37,ad:"Kastamonu",plaka:"37",bolge:"Karadeniz",nufus:"371.396",yuzolcum:"13.108 km²",slogan:"Şapka devriminin başladığı yer",bilgiler:["Atatürk şapka reformunu Kastamonu'da başlattı.","Ilgaz Dağı Milli Parkı doğa harikasıdır.","Kastamonu pastırması coğrafi işaretlidir.","Tarihi Kastamonu Kalesi görülmeye değerdir."],ilceler:["Merkez","Abana","Ağlı","Araç","Azdavay","Bozkurt","Çatalzeytin","Cide","Daday","Devrekani","Doğanyurt","Hanönü","İhsangazi","İnebolu","Küre","Pınarbaşı","Seydiler","Şenpazar","Taşköprü","Tosya"]},
+  {id:38,ad:"Kayseri",plaka:"38",bolge:"İç Anadolu",nufus:"1.441.523",yuzolcum:"16.917 km²",slogan:"Erciyes'in eteğinde",bilgiler:["Erciyes Dağı (3917 m) önemli kayak merkezine ev sahipliği yapar.","Kayseri pastırması ve mantısı coğrafi işaretlidir.","Selçuklu kervansarayları tarihi öneme sahiptir.","Sanayi açısından Türkiye'nin önde gelen şehirlerindendir."],ilceler:["Kocasinan","Melikgazi","Talas","Akkışla","Bünyan","Develi","Felahiye","Hacılar","İncesu","Özvatan","Pınarbaşı","Sarıoğlan","Sarız","Tomarza","Yahyalı","Yeşilhisar"]},
+  {id:39,ad:"Kırklareli",plaka:"39",bolge:"Marmara",nufus:"360.432",yuzolcum:"6.550 km²",slogan:"Trakya'nın kuzey kapısı",bilgiler:["Türkiye'nin Avrupa topraklarının en kuzey ilidir.","Dupnisa Mağarası ve kanyonuyla ekoturizm merkezi.","Kırklareli Istrancaları ormanlık ve biyoçeşitlidir."],ilceler:["Merkez","Babaeski","Demirköy","Kofçaz","Lüleburgaz","Pehlivanköy","Pınarhisar","Vize"]},
+  {id:40,ad:"Kırşehir",plaka:"40",bolge:"İç Anadolu",nufus:"236.618",yuzolcum:"6.570 km²",slogan:"Ahilerin ve bağların kenti",bilgiler:["Ahilik teşkilatının merkezi burada kuruldu.","Kırşehir bağlama ve halk müziğiyle bilinir.","Cacabey Medresesinde astronomi gözlemi yapılmıştır.","Kaman-Kalehöyük arkeolojik kazı alanı önemlidir."],ilceler:["Merkez","Akçakent","Akpınar","Boztepe","Çiçekdağı","Kaman","Mucur"]},
+  {id:41,ad:"Kocaeli",plaka:"41",bolge:"Marmara",nufus:"2.032.995",yuzolcum:"3.626 km²",slogan:"Sanayi ve yeşilin buluştuğu yer",bilgiler:["Türkiye'nin en büyük sanayi illerinden biridir.","İzmit Körfezi deniz ulaşımı açısından stratejiktir.","1999 depremi sonrası kentin yüzü değişti."],ilceler:["İzmit","Gebze","Gölcük","Körfez","Darıca","Çayırova","Dilovası","Kandıra","Karamürsel","Kartepe","Başiskele","Derince","İzmit"]},
+  {id:42,ad:"Konya",plaka:"42",bolge:"İç Anadolu",nufus:"2.277.017",yuzolcum:"38.257 km²",slogan:"Mevlana'nın kenti",bilgiler:["Mevlana Türbesi Türkiye'nin en çok ziyaret edilen ibadet yeridir.","Sema töreni UNESCO Somut Olmayan Kültürel Miras'tadır.","Türkiye'nin yüzölçümü bakımından en büyük ilidir.","Sille, antik Hristiyan topluluğunun yaşadığı tarihi köydür."],ilceler:["Selçuklu","Karatay","Meram","Akşehir","Beyşehir","Çumra","Ereğli","Ilgın","Karapınar","Kulu","Seydişehir","Yunak"]},
+  {id:43,ad:"Kütahya",plaka:"43",bolge:"Ege",nufus:"560.930",yuzolcum:"11.875 km²",slogan:"Çininin başkenti",bilgiler:["Türkiye'nin en ünlü çini ve seramik üretim merkezidir.","Osmanlı döneminden kalan çini sanatı yaşatılmaktadır.","Kütahya Kalesi tarihi önem taşır.","Gediz Ovası tarım açısından verimlidir."],ilceler:["Merkez","Altıntaş","Aslanapa","Çavdarhisar","Domaniç","Dumlupınar","Emet","Gediz","Hisarcık","Pazarlar","Simav","Şaphane","Tavşanlı"]},
+  {id:44,ad:"Malatya",plaka:"44",bolge:"Doğu Anadolu",nufus:"812.580",yuzolcum:"12.313 km²",slogan:"Dünyanın kayısı bahçesi",bilgiler:["Türkiye kayısı üretiminin yüzde 50'sini karşılar.","Malatya kayısısı dünya ihracatında önemli paya sahiptir.","Aslantepe Höyüğü UNESCO Dünya Mirası'na alındı.","İnönü Üniversitesi şehrin eğitim merkezidir."],ilceler:["Battalgazi","Yeşilyurt","Akçadağ","Arapgir","Arguvan","Darende","Doğanşehir","Doğanyol","Hekimhan","Kale","Kuluncak","Pütürge","Yazıhan"]},
+  {id:45,ad:"Manisa",plaka:"45",bolge:"Ege",nufus:"1.472.267",yuzolcum:"13.096 km²",slogan:"Mesir macununun kenti",bilgiler:["Mesir macunu UNESCO Somut Olmayan Kültürel Miras'tadır.","Sardes antik kenti Lidya Krallığı'nın merkeziydi.","Spil Dağı Milli Parkı bölgede öne çıkar.","Thyateira antik kenti günümüz Akhisar'ındadır."],ilceler:["Şehzadeler","Yunusemre","Akhisar","Alaşehir","Demirci","Gölmarmara","Gördes","Kırkağaç","Köprübaşı","Kula","Salihli","Sarıgöl","Saruhanlı","Selendi","Soma","Turgutlu"]},
+  {id:46,ad:"Kahramanmaraş",plaka:"46",bolge:"Akdeniz",nufus:"1.177.436",yuzolcum:"14.327 km²",slogan:"Dondurma ve biberin kenti",bilgiler:["Kahramanmaraş dondurması dövme tekniğiyle yapılır ve coğrafi işaretlidir.","Maraş biberi acılığıyla ünlüdür.","Kahramanmaraş İstiklal Savaşı'ndaki direnişiyle unvan aldı."],ilceler:["Dulkadiroğlu","Onikişubat","Afşin","Andırın","Çağlayancerit","Ekinözü","Elbistan","Göksun","Nurhak","Pazarcık","Türkoğlu"]},
+  {id:47,ad:"Mardin",plaka:"47",bolge:"Güneydoğu Anadolu",nufus:"851.993",yuzolcum:"8.891 km²",slogan:"Taşın dili konuşur",bilgiler:["Mardin tarihi şehri UNESCO Dünya Mirası Geçici Listesindedir.","Deyrulzafaran Manastırı Süryanice geleneğini yaşatır.","Hasankeyf binlerce yıllık tarihe sahip eski kenttir.","Mardin yemek kültürü Mezopotamya'nın izlerini taşır."],ilceler:["Artuklu","Dargeçit","Derik","Kızıltepe","Mazıdağı","Midyat","Nusaybin","Ömerli","Savur","Yeşilli"]},
+  {id:48,ad:"Muğla",plaka:"48",bolge:"Ege",nufus:"1.094.731",yuzolcum:"13.338 km²",slogan:"Mavi yolculuğun kalbi",bilgiler:["Bodrum, Marmaris ve Fethiye dünyaca ünlü tatil beldeleridir.","Mavi yolculuk turları Muğla kıyılarından başlar.","Ölüdeniz plajı dünyanın en güzel kumsal olarak defalarca seçilmiştir.","Likya Yolu Türkiye'nin en ünlü yürüyüş rotasıdır."],ilceler:["Menteşe","Bodrum","Datça","Fethiye","Kavaklıdere","Köyceğiz","Marmaris","Milas","Ortaca","Seydikemer","Ula","Yatağan"]},
+  {id:49,ad:"Muş",plaka:"49",bolge:"Doğu Anadolu",nufus:"407.512",yuzolcum:"8.022 km²",slogan:"Ovalar ve tarih",bilgiler:["Malazgirt Ovası 1071 Malazgirt Meydan Muharebesi'ne sahne oldu.","Muş ovasındaki lagün göller önemli kuş habitatıdır.","Malazgirt İlçesi Türkiye'de tarihi öneme sahiptir."],ilceler:["Merkez","Bulanık","Hasköy","Korkut","Malazgirt","Varto"]},
+  {id:50,ad:"Nevşehir",plaka:"50",bolge:"İç Anadolu",nufus:"306.212",yuzolcum:"5.467 km²",slogan:"Kapadokya'nın kalbi",bilgiler:["Kapadokya UNESCO Dünya Mirası Listesindedir.","Peri bacaları ve yer altı şehirleri büyüleyicidir.","Göreme Açık Hava Müzesi dünyanın önemli müzelerinden.","Balon turları Kapadokya'da en popüler aktivitedir."],ilceler:["Merkez","Acıgöl","Avanos","Derinkuyu","Gülşehir","Hacıbektaş","Kozaklı","Ürgüp"]},
+  {id:51,ad:"Niğde",plaka:"51",bolge:"İç Anadolu",nufus:"367.988",yuzolcum:"7.312 km²",slogan:"Elmanın ve patatesin kenti",bilgiler:["Türkiye'nin elma üretiminde önemli illeri arasındadır.","Aladağlar Milli Parkı doğa sporu tutkunlarını çeker.","Niğde patates ekim alanları büyüktür."],ilceler:["Merkez","Altunhisar","Bor","Çamardı","Çiftlik","Ulukışla"]},
+  {id:52,ad:"Ordu",plaka:"52",bolge:"Karadeniz",nufus:"747.620",yuzolcum:"5.952 km²",slogan:"Fındık denizi",bilgiler:["Türkiye'nin fındık üretiminde birinci ilidir.","Boztepe seyir terası şehrin simgesidir.","Ordu Kalesi tarihi dokuyla çevrilidir.","Gülyalı balıkçılığıyla tanınan kıyı kasabasıdır."],ilceler:["Altınordu","Akkuş","Aybastı","Çamaş","Çatalpınar","Çaybaşı","Fatsa","Gölköy","Gülyalı","Gürgentepe","İkizce","Kabadüz","Kabataş","Korgan","Kumru","Mesudiye","Perşembe","Ulubey","Ünye"]},
+  {id:53,ad:"Rize",plaka:"53",bolge:"Karadeniz",nufus:"342.210",yuzolcum:"3.920 km²",slogan:"Çayın ve yağmurun kenti",bilgiler:["Türkiye çay üretiminin yüzde doksanı Rize'den gelir.","Kaçkar Dağları Türkiye'nin en zorlu yürüyüş rotalarındandır.","Ayder Yaylası termal kaynakları ve doğasıyla meşhurdur.","Hopa-Rize arası dünyanın en güzel kıyı yollarından biri."],ilceler:["Merkez","Ardeşen","Çamlıhemşin","Çayeli","Derepazarı","Fındıklı","Güneysu","Hemşin","İkizdere","İyidere","Kalkandere","Pazar"]},
+  {id:54,ad:"Sakarya",plaka:"54",bolge:"Marmara",nufus:"1.099.946",yuzolcum:"4.817 km²",slogan:"Çiçeğin ve tarimin kenti",bilgiler:["Türkiye'nin çiçek üretim merkezi Hendek ve Akyazı'dadır.","1999 depremi sonrası kenti büyük ölçüde yeniden inşa edildi.","Sapanca Gölü İstanbul ve Kocaeli'ye su sağlar."],ilceler:["Adapazarı","Akyazı","Arifiye","Erenler","Ferizli","Geyve","Hendek","Karapürçek","Karasu","Kaynarca","Kocaali","Pamukova","Sapanca","Serdivan","Söğütlü","Taraklı"]},
+  {id:55,ad:"Samsun",plaka:"55",bolge:"Karadeniz",nufus:"1.349.015",yuzolcum:"9.579 km²",slogan:"Atatürk'ün yola çıktığı yer",bilgiler:["Atatürk 19 Mayıs 1919'da Samsun'a çıkarak Kurtuluş Savaşı'nı başlattı.","Bandırma Vapuru Samsun'un tarihinde özel yere sahiptir.","Karadeniz'in en büyük limanlarından biri burada.","Samsun tütünü ve bafra pideleri meşhurdur."],ilceler:["Atakum","Canik","İlkadım","Tekkeköy","19 Mayıs","Alaçam","Asarcık","Ayvacık","Bafra","Çarşamba","Havza","Kavak","Ladik","Salıpazarı","Terme","Vezirköprü","Yakakent"]},
+  {id:56,ad:"Siirt",plaka:"56",bolge:"Güneydoğu Anadolu",nufus:"341.799",yuzolcum:"5.406 km²",slogan:"Menengiç kahvesinin kenti",bilgiler:["Siirt battaniyesi ve büryan kebabı coğrafi işaretlidir.","Botan Çayı bölgenin önemli akarsuyudur.","Veysel Karani türbesi önemli bir ziyaret yeridir."],ilceler:["Merkez","Baykan","Eruh","Kurtalan","Pervari","Şirvan","Tillo"]},
+  {id:57,ad:"Sinop",plaka:"57",bolge:"Karadeniz",nufus:"206.418",yuzolcum:"5.862 km²",slogan:"Türkiye'nin kuzey burnu",bilgiler:["Türkiye'nin en kuzey noktasındaki ildir.","Sinop limanı tarihi boyunca önemli bir askeri ve ticaret üssüdür.","Diogenes'in doğduğu yer olarak bilinir.","Sinop cezaevi müzeye dönüştürülmüştür."],ilceler:["Merkez","Ayancık","Boyabat","Dikmen","Durağan","Erfelek","Gerze","Saraydüzü","Türkeli"]},
+  {id:58,ad:"Sivas",plaka:"58",bolge:"İç Anadolu",nufus:"601.545",yuzolcum:"28.488 km²",slogan:"Anadolu'nun ortası",bilgiler:["Sivas Kongresi Milli Mücadele'nin kilometre taşıdır.","Divriği Ulu Camii UNESCO Dünya Mirası'ndadır.","Kangal köpeği ve Kangal balık kaplıcası dünya çapında ünlüdür.","Şifaiye Medresesi Anadolu Selçuklu tıbbının simgesidir."],ilceler:["Merkez","Akıncılar","Altınyayla","Divriği","Doğanşar","Gemerek","Gölova","Hafik","İmranlı","Kangal","Koyulhisar","Suşehri","Şarkışla","Ulaş","Yıldızeli","Zara"]},
+  {id:59,ad:"Tekirdağ",plaka:"59",bolge:"Marmara",nufus:"1.103.919",yuzolcum:"6.218 km²",slogan:"Trakya'nın bağ kenti",bilgiler:["Tekirdağ köftesi coğrafi işaretlidir.","Bölge Türkiye'nin en önemli şarap üretim alanlarından biridir.","Namık Kemal müzesi şehrin kültürel değeridir."],ilceler:["Süleymanpaşa","Çerkezköy","Çorlu","Ergene","Hayrabolu","Kapaklı","Malkara","Marmaraereğlisi","Muratlı","Saray","Şarköy","Velimeşe"]},
+  {id:60,ad:"Tokat",plaka:"60",bolge:"Karadeniz",nufus:"593.475",yuzolcum:"9.958 km²",slogan:"Elmanın kenti",bilgiler:["Tokat elması Türkiye'nin en kaliteli elmaları arasındadır.","Ballıca Mağarası büyüleyici bir doğa harikasıdır.","Tokat Kalesi tarihi şehir merkezine hâkimdir.","Osmanlı dönemi yapıları kültürel zenginliğin göstergesidir."],ilceler:["Merkez","Almus","Artova","Başçiftlik","Erbaa","Niksar","Pazar","Reşadiye","Sulusaray","Turhal","Yeşilyurt","Zile"]},
+  {id:61,ad:"Trabzon",plaka:"61",bolge:"Karadeniz",nufus:"835.491",yuzolcum:"4.685 km²",slogan:"Ayasofya'nın ve hamsilerin kenti",bilgiler:["Trabzon Ayasofyası Bizans döneminden kalmadır.","Sümela Manastırı kaya yüzeyindeki muazzam yapısıyla ünlüdür.","Trabzon bozası ve Akçaabat köftesi özel lezzetlerdir.","Trabzonspor Türkiye'nin köklü kulüplerinden biridir."],ilceler:["Ortahisar","Akçaabat","Araklı","Arsin","Beşikdüzü","Çarşıbaşı","Çaykara","Dernekpazarı","Düzköy","Hayrat","Köprübaşı","Maçka","Of","Sürmene","Şalpazarı","Tonya","Vakfıkebir","Yomra"]},
+  {id:62,ad:"Tunceli",plaka:"62",bolge:"Doğu Anadolu",nufus:"84.660",yuzolcum:"7.774 km²",slogan:"Dağların ve ırmakların kenti",bilgiler:["Türkiye'nin en az nüfuslu ilidir.","Munzur Vadisi Milli Parkı Türkiye'nin en doğal habitatlarından biridir.","Pülümür alabalığı coğrafi işaretlidir.","Zazalar ve Aleviler geleneksel kültürü yaşatır."],ilceler:["Merkez","Çemişgezek","Hozat","Mazgirt","Nazımiye","Ovacık","Pertek","Pülümür"]},
+  {id:63,ad:"Şanlıurfa",plaka:"63",bolge:"Güneydoğu Anadolu",nufus:"2.183.716",yuzolcum:"18.584 km²",slogan:"Peygamberlerin kenti",bilgiler:["Hz. İbrahim'in doğduğu yer olarak kabul edilir.","Balıklıgöl kutsal kabul edilen tarihi bir göldür.","Göbeklitepe insanlığın bilinen en eski tapınağıdır.","Urfa kebabı ve çiğ köftesi meşhurdur."],ilceler:["Eyyübiye","Haliliye","Karaköprü","Akçakale","Birecik","Bozova","Ceylanpınar","Halfeti","Harran","Hilvan","Siverek","Suruç","Viranşehir"]},
+  {id:64,ad:"Uşak",plaka:"64",bolge:"Ege",nufus:"369.832",yuzolcum:"5.341 km²",slogan:"Halı ve tekstilin kenti",bilgiler:["Uşak halısı Anadolu el dokuması geleneğini yaşatır.","Karun Hazinesi (Lidya altınları) buradan çıktı.","Tekstil sektörü ekonominin bel kemiğidir."],ilceler:["Merkez","Banaz","Eşme","Karahallı","Sivaslı","Ulubey"]},
+  {id:65,ad:"Van",plaka:"65",bolge:"Doğu Anadolu",nufus:"1.161.806",yuzolcum:"19.069 km²",slogan:"Gölün kenti",bilgiler:["Van Gölü Türkiye'nin en büyük gölüdür.","Van kedisi mavi ve sarı gözleriyle dünyaca ünlüdür.","Urartu Krallığı Kalesi tarihi öneme sahiptir.","Van kahvaltısı Türkiye'nin en meşhur sabah sofrasıdır."],ilceler:["İpekyolu","Tuşba","Edremit","Erciş","Başkale","Çaldıran","Çatak","Gevaş","Gürpınar","Muradiye","Özalp","Saray"]},
+  {id:66,ad:"Yozgat",plaka:"66",bolge:"İç Anadolu",nufus:"393.516",yuzolcum:"14.123 km²",slogan:"Çamlığın kenti",bilgiler:["Çamlık Milli Parkı Türkiye'nin önemli tabiat parklarından biridir.","Yozgat çalması halk müziğinin değerli parçasıdır.","Yazılıkaya Urartu kaya yazıtları bölgede öne çıkar."],ilceler:["Merkez","Akdağmadeni","Aydıncık","Boğazlıyan","Çandır","Çayıralan","Çekerek","Kadışehri","Saraykent","Sarıkaya","Şefaatli","Sorgun","Yenifakılı","Yerköy"]},
+  {id:67,ad:"Zonguldak",plaka:"67",bolge:"Batı Karadeniz",nufus:"582.804",yuzolcum:"3.644 km²",slogan:"Kömürün kenti",bilgiler:["Türkiye'nin kömür havzasının merkezidir.","Ereğli ve Kdz. Ereğlisi demir-çelik sanayinin merkezidir.","Küre Dağları Milli Parkı önemli doğal alandır."],ilceler:["Merkez","Alaplı","Çaycuma","Devrek","Ereğli","Gökçebey","Kilimli","Kozlu"]},
+  {id:68,ad:"Aksaray",plaka:"68",bolge:"İç Anadolu",nufus:"437.017",yuzolcum:"7.626 km²",slogan:"İpek yolunun ortasında",bilgiler:["İpek Yolu üzerinde önemli bir konaklama merkezi olmuştur.","Ihlara Vadisi büyüleyici kaya kiliselerine ev sahipliği yapar.","Ağaçlı Selime Katedrali etkileyici kaya yontma sanatını yansıtır."],ilceler:["Merkez","Ağaçören","Eskil","Gülağaç","Güzelyurt","Ortaköy","Sarıyahşi"]},
+  {id:69,ad:"Bayburt",plaka:"69",bolge:"Karadeniz",nufus:"83.677",yuzolcum:"3.652 km²",slogan:"Çoruh'un kenti",bilgiler:["Türkiye'nin yüzölçümü bakımından en küçük ilidir.","Bayburt Kalesi Çoruh Nehri kıyısında yükselen önemli bir kaledir.","Cendere Köprüsü tarihi köprüler arasındadır."],ilceler:["Merkez","Aydıntepe","Demirözü"]},
+  {id:70,ad:"Karaman",plaka:"70",bolge:"İç Anadolu",nufus:"251.012",yuzolcum:"9.163 km²",slogan:"Karamanoğullarının yurdu",bilgiler:["Türkçenin resmi dil ilan edildiği ilk yer olarak tarihe geçmiştir.","Karamanoğulları Beyliği Türk tarihi için önem taşır.","Binbirkilise antik kenti bölgenin önemli arkeolojik alanıdır."],ilceler:["Merkez","Ayrancı","Başyayla","Ermenek","Kazımkarabekir","Sarıveliler"]},
+  {id:71,ad:"Kırıkkale",plaka:"71",bolge:"İç Anadolu",nufus:"270.305",yuzolcum:"4.365 km²",slogan:"Sanayinin kenti",bilgiler:["Türkiye'nin savunma sanayii fabrikalarına ev sahipliği yapar.","MKEK Kırıkkale Silah Fabrikası stratejik önemdedir.","Delice Çayı ilin önemli akarsuyudur."],ilceler:["Merkez","Bahşılı","Balışeyh","Çelebi","Delice","Karakeçili","Keskin","Sulakyurt","Yahşihan"]},
+  {id:72,ad:"Batman",plaka:"72",bolge:"Güneydoğu Anadolu",nufus:"631.976",yuzolcum:"4.694 km²",slogan:"Petrol ve tarihin şehri",bilgiler:["Türkiye'nin en büyük petrol bölgelerinden biridir.","Hasankeyf Antik Kenti binlerce yıllık tarihe sahiptir.","Batman Çayı ilde önemli bir akarsu konumundadır."],ilceler:["Merkez","Beşiri","Gercüş","Hasankeyf","Kozluk","Sason"]},
+  {id:73,ad:"Şırnak",plaka:"73",bolge:"Güneydoğu Anadolu",nufus:"557.840",yuzolcum:"7.172 km²",slogan:"Cudi'nin eteğinde",bilgiler:["Cudi Dağı efsanevi öneme sahip tarihi bir dağdır.","Dicle Nehri'nin üst havzasında yer alır.","Cizre tarihi camii ve kaleleriyle bilinir."],ilceler:["Merkez","Beytüşşebap","Cizre","Güçlükonak","İdil","Silopi","Uludere"]},
+  {id:74,ad:"Bartın",plaka:"74",bolge:"Batı Karadeniz",nufus:"196.390",yuzolcum:"2.143 km²",slogan:"Küre'nin cevheri",bilgiler:["Amasra antik kenti Romalı ve Bizans döneminden kalma yapılar barındırır.","Küre Dağları Milli Parkı önemli bir ekosisteme sahiptir.","Bartın Irmağı üzerinde geleneksel ahşap tekne yolculukları yapılır."],ilceler:["Merkez","Amasra","Kurucaşile","Ulus"]},
+  {id:75,ad:"Ardahan",plaka:"75",bolge:"Doğu Anadolu",nufus:"90.497",yuzolcum:"5.586 km²",slogan:"Kafkasların sınır şehri",bilgiler:["Türkiye'nin en soğuk illerinden biridir.","Çıldır Gölü kışın buz tutar ve atlı kızak turları yapılır.","Ardahan kalesi tarihi bir yapıdır."],ilceler:["Merkez","Çıldır","Damal","Göle","Hanak","Posof"]},
+  {id:76,ad:"Iğdır",plaka:"76",bolge:"Doğu Anadolu",nufus:"196.862",yuzolcum:"3.539 km²",slogan:"Aras'ın kenti",bilgiler:["Ağrı Dağı'nın en güzel görüntüsü Iğdır'dan yakalanır.","Aras Nehri tarihte Ermenistan ve Türkiye sınırını çizer.","Iğdır Ovası tarımsal açıdan verimliliğiyle bilinir."],ilceler:["Merkez","Aralık","Karakoyunlu","Tuzluca"]},
+  {id:77,ad:"Yalova",plaka:"77",bolge:"Marmara",nufus:"292.937",yuzolcum:"847 km²",slogan:"Çiçekçiliğin kenti",bilgiler:["Türkiye'nin en yoğun nüfuslu ili olma özelliği taşır.","Termal kaplıcaları İstanbullular için hafta sonu kaçamağıdır.","Çiçekçilik ve fidancılık ekonomisinin temeli."],ilceler:["Merkez","Altınova","Armutlu","Çiftlikköy","Çınarcık","Termal"]},
+  {id:78,ad:"Karabük",plaka:"78",bolge:"Batı Karadeniz",nufus:"245.397",yuzolcum:"2.956 km²",slogan:"Demir çeliğin kenti",bilgiler:["Karabük Demir-Çelik Fabrikası Türk sanayiinin simgesidir.","Safranbolu tarihi çarşısı ve konakları UNESCO Dünya Mirası'ndadır.","Soğuksu Milli Parkı doğa güzellikleriyle dikkat çeker."],ilceler:["Merkez","Eflani","Eskipazar","Ovacık","Safranbolu","Yenice"]},
+  {id:79,ad:"Kilis",plaka:"79",bolge:"Güneydoğu Anadolu",nufus:"143.587",yuzolcum:"1.521 km²",slogan:"Zeytinin kenti",bilgiler:["Türkiye'nin yüzölçümü bakımından ikinci küçük ilidir.","Kilis zeytinyağı ve yöresel mutfağı coğrafi işaretlidir.","Suriye sınırına komşudur ve stratejik konumdadır."],ilceler:["Merkez","Elbeyli","Musabeyli","Polateli"]},
+  {id:80,ad:"Osmaniye",plaka:"80",bolge:"Akdeniz",nufus:"556.614",yuzolcum:"3.274 km²",slogan:"Torosların eteğinde",bilgiler:["Hasanbeyli ve Kadirli tarihi geçmişleriyle öne çıkar.","Torosların eteklerinde verimli tarım arazileri uzanır.","Osmaniye portakal ve narenciye üretiminde önemli yer tutar."],ilceler:["Merkez","Bahçe","Düziçi","Hasanbeyli","Kadirli","Sumbas","Toprakkale"]},
+  {id:81,ad:"Düzce",plaka:"81",bolge:"Batı Karadeniz",nufus:"410.679",yuzolcum:"2.492 km²",slogan:"Doğanın kenti",bilgiler:["1999 depremi büyük yıkıma yol açmış, şehir yeniden inşa edilmiştir.","Melen Çayı İstanbul'un içme suyuna katkı sağlar.","Akçakoca Karadeniz'in tercih edilen yaz destinasyonudur.","Fındık ve mısır tarımı ekonominin belkemiğidir."],ilceler:["Merkez","Akçakoca","Cumayeri","Çilimli","Gölyaka","Gümüşova","Kaynaşlı","Yığılca"]}
+];
 
-  // Compute totals
-  const totalBilgi = ILLER.reduce((s, il) => s + il.bilgiler.length, 0);
-  const totalIlce = ILLER.reduce((s, il) => s + il.ilceler.length, 0);
-  document.getElementById('total-bilgi').textContent = totalBilgi;
-  document.getElementById('total-ilce').textContent = totalIlce;
+const BOLGE_COLORS = {
+  "Marmara":"#378ADD","Ege":"#1D9E75","Akdeniz":"#D85A30","İç Anadolu":"#888780",
+  "Karadeniz":"#3B6D11","Doğu Anadolu":"#BA7517","Güneydoğu Anadolu":"#993556",
+  "Batı Karadeniz":"#639922"
+};
 
-  // Regions
-  const regions = ['Tümü', ...new Set(ILLER.map(i => i.bolge))];
-  regions.forEach(r => {
-    const btn = document.createElement('button');
-    btn.className = 'region-btn' + (r === 'Tümü' ? ' active' : '');
-    btn.textContent = r;
-    btn.onclick = () => {
-      activeRegion = r;
-      document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderGrid();
-    };
-    regionFiltersEl.appendChild(btn);
-  });
+const IL_COORDS = {
+  "Adana":[37.0,-35.4],"Adıyaman":[37.75,-38.27],"Afyonkarahisar":[38.75,-30.54],"Ağrı":[39.72,-43.05],
+  "Amasya":[40.65,-35.83],"Ankara":[39.92,-32.85],"Antalya":[36.90,-30.70],"Artvin":[41.18,-41.82],
+  "Aydın":[37.84,-27.85],"Balıkesir":[39.65,-27.88],"Bilecik":[40.15,-29.98],"Bingöl":[38.88,-40.50],
+  "Bitlis":[38.40,-42.12],"Bolu":[40.73,-31.61],"Burdur":[37.72,-30.29],"Bursa":[40.18,-29.06],
+  "Çanakkale":[40.15,-26.41],"Çankırı":[40.60,-33.62],"Çorum":[40.55,-34.96],"Denizli":[37.78,-29.09],
+  "Diyarbakır":[37.91,-40.23],"Edirne":[41.68,-26.56],"Elazığ":[38.67,-39.22],"Erzincan":[39.75,-39.50],
+  "Erzurum":[39.90,-41.27],"Eskişehir":[39.78,-30.52],"Gaziantep":[37.06,-37.38],"Giresun":[40.92,-38.39],
+  "Gümüşhane":[40.46,-39.48],"Hakkari":[37.57,-43.74],"Hatay":[36.40,-36.34],"Isparta":[37.76,-30.55],
+  "Mersin":[36.80,-34.62],"İstanbul":[41.01,-28.98],"İzmir":[38.42,-27.14],"Kars":[40.60,-43.10],
+  "Kastamonu":[41.38,-33.78],"Kayseri":[38.72,-35.49],"Kırklareli":[41.74,-27.22],"Kırşehir":[39.14,-34.16],
+  "Kocaeli":[40.85,-29.88],"Konya":[37.87,-32.49],"Kütahya":[39.42,-29.99],"Malatya":[38.35,-38.31],
+  "Manisa":[38.61,-27.43],"Kahramanmaraş":[37.59,-36.92],"Mardin":[37.31,-40.74],"Muğla":[37.21,-28.36],
+  "Muş":[38.73,-41.49],"Nevşehir":[38.62,-34.72],"Niğde":[37.97,-34.68],"Ordu":[40.99,-37.88],
+  "Rize":[41.02,-40.52],"Sakarya":[40.77,-30.40],"Samsun":[41.28,-36.33],"Siirt":[37.93,-41.95],
+  "Sinop":[42.03,-35.15],"Sivas":[39.75,-37.02],"Tekirdağ":[40.97,-27.51],"Tokat":[40.31,-36.55],
+  "Trabzon":[41.00,-39.73],"Tunceli":[39.11,-39.55],"Şanlıurfa":[37.16,-38.79],"Uşak":[38.68,-29.41],
+  "Van":[38.49,-43.38],"Yozgat":[39.82,-34.81],"Zonguldak":[41.45,-31.79],"Aksaray":[38.37,-34.03],
+  "Bayburt":[40.26,-40.23],"Karaman":[37.18,-33.22],"Kırıkkale":[39.85,-33.51],"Batman":[37.88,-41.13],
+  "Şırnak":[37.52,-42.46],"Bartın":[41.63,-32.34],"Ardahan":[41.11,-42.70],"Iğdır":[39.92,-44.05],
+  "Yalova":[40.65,-29.27],"Karabük":[41.20,-32.62],"Kilis":[36.72,-37.12],"Osmaniye":[37.07,-36.24],"Düzce":[40.84,-31.16]
+};
 
-  // Render grid
-  function renderGrid() {
-    const q = searchInput.value.trim().toLowerCase();
-    const filtered = ILLER.filter(il => {
-      const matchRegion = activeRegion === 'Tümü' || il.bolge === activeRegion;
-      const matchSearch = !q || il.ad.toLowerCase().includes(q) || il.plaka.includes(q);
-      return matchRegion && matchSearch;
-    });
+const SVG_W = 1000, SVG_H = 480;
+const LAT_MAX = 42.3, LAT_MIN = 36.0, LON_MIN = 25.7, LON_MAX = 44.8;
+function toXY(lat, lon) {
+  const x = ((lon - LON_MIN) / (LON_MAX - LON_MIN)) * (SVG_W - 60) + 30;
+  const y = ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * (SVG_H - 60) + 30;
+  return [x, y];
+}
 
-    grid.innerHTML = '';
+const svg = document.getElementById('map-svg');
+const circles = {};
+let selectedId = null;
+let activeRegion = 'Tümü';
 
-    if (!filtered.length) {
-      grid.innerHTML = '<div class="no-results"><div class="emoji">🔍</div><div>Sonuç bulunamadı.</div></div>';
-      return;
-    }
+ILLER_DATA.forEach(il => {
+  const coords = IL_COORDS[il.ad];
+  if (!coords) return;
+  const [x, y] = toXY(coords[0], coords[1]);
+  const color = BOLGE_COLORS[il.bolge] || '#888780';
+  const r = Math.max(6, Math.min(14, 6 + il.bilgiler.length * 0.8));
 
-    filtered.forEach(il => {
-      const card = document.createElement('div');
-      card.className = 'province-card';
-      card.innerHTML = `
-        <div class="province-plate">${il.plaka}</div>
-        <div class="province-name">${il.ad}</div>
-        <div class="province-region">${il.bolge}</div>
-        <div class="province-count">● ${il.bilgiler.length} bilgi · ${il.ilceler.length} ilçe</div>
-      `;
-      card.onclick = () => showDetail(il);
-      grid.appendChild(card);
-    });
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.style.cursor = 'pointer';
+
+  const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  circle.setAttribute('cx', x);
+  circle.setAttribute('cy', y);
+  circle.setAttribute('r', r);
+  circle.setAttribute('fill', color);
+  circle.setAttribute('opacity', '0.85');
+  circle.setAttribute('stroke', '#fff');
+  circle.setAttribute('stroke-width', '0.8');
+
+  const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+  txt.setAttribute('x', x);
+  txt.setAttribute('y', y - r - 2);
+  txt.setAttribute('text-anchor','middle');
+  txt.setAttribute('font-size','8');
+  txt.setAttribute('fill','var(--color-text-secondary)');
+  txt.textContent = il.plaka;
+
+  g.appendChild(circle);
+  g.appendChild(txt);
+  g.onclick = () => showDetail(il);
+  g.onmouseenter = () => { if (selectedId !== il.id) { circle.setAttribute('r', r + 3); circle.setAttribute('opacity','1'); } };
+  g.onmouseleave = () => { if (selectedId !== il.id) { circle.setAttribute('r', r); circle.setAttribute('opacity','0.85'); } };
+  svg.appendChild(g);
+  circles[il.id] = { g, circle, r, color };
+});
+
+function showDetail(il) {
+  if (selectedId !== null && circles[selectedId]) {
+    const prev = circles[selectedId];
+    prev.circle.setAttribute('r', prev.r);
+    prev.circle.setAttribute('stroke','#fff');
+    prev.circle.setAttribute('stroke-width','0.8');
   }
+  selectedId = il.id;
+  const c = circles[il.id];
+  c.circle.setAttribute('r', c.r + 4);
+  c.circle.setAttribute('stroke','#0C447C');
+  c.circle.setAttribute('stroke-width','2');
 
-  searchInput.addEventListener('input', renderGrid);
+  document.getElementById('backBtn').style.display = 'inline-block';
+  document.getElementById('dp').innerHTML = `
+    <div class="dp-header">
+      <div class="dp-plate">${il.plaka}</div>
+      <div><div class="dp-title">${il.ad}</div><div class="dp-sub">${il.bolge} Bölgesi</div></div>
+    </div>
+    <div class="dp-slogan">« ${il.slogan} »</div>
+    <div class="meta-grid">
+      <div class="meta-item"><div class="ml">Nüfus</div><div class="mv">${il.nufus}</div></div>
+      <div class="meta-item"><div class="ml">Yüzölçümü</div><div class="mv">${il.yuzolcum}</div></div>
+      <div class="meta-item"><div class="ml">İlçe sayısı</div><div class="mv">${il.ilceler.length}</div></div>
+      <div class="meta-item"><div class="ml">Bilgi sayısı</div><div class="mv">${il.bilgiler.length}</div></div>
+    </div>
+    <div class="sec-label">Öne çıkan bilgiler</div>
+    <div class="facts-list">${il.bilgiler.map(b=>`<div class="fact">${b}</div>`).join('')}</div>
+    <div class="sec-label" style="margin-top:12px">İlçeler</div>
+    <div class="tags">${il.ilceler.map(d=>`<span class="tag">${d}</span>`).join('')}</div>
+  `;
+}
 
-  // Show detail
-  function showDetail(il) {
-    document.getElementById('detail-name').textContent = il.ad;
-    document.getElementById('detail-region').textContent = il.bolge + ' Bölgesi';
-    document.getElementById('detail-plate').textContent = il.plaka;
-    document.getElementById('detail-slogan').textContent = '« ' + il.slogan + ' »';
-
-    // Meta
-    const meta = document.getElementById('detail-meta');
-    meta.innerHTML = `
-      <div class="meta-card">
-        <div class="label">Plaka Kodu</div>
-        <div class="value accent">${il.plaka}</div>
-      </div>
-      <div class="meta-card">
-        <div class="label">Bölge</div>
-        <div class="value">${il.bolge}</div>
-      </div>
-      <div class="meta-card">
-        <div class="label">Nüfus</div>
-        <div class="value">${il.nufus}</div>
-      </div>
-      <div class="meta-card">
-        <div class="label">Yüzölçümü</div>
-        <div class="value">${il.yuzolcum}</div>
-      </div>
-      <div class="meta-card">
-        <div class="label">İlçe Sayısı</div>
-        <div class="value accent">${il.ilceler.length}</div>
-      </div>
-      <div class="meta-card">
-        <div class="label">Bilgi Sayısı</div>
-        <div class="value accent">${il.bilgiler.length}</div>
-      </div>
-    `;
-
-    // Facts
-    const facts = document.getElementById('detail-facts');
-    facts.innerHTML = il.bilgiler.map(b => `<div class="fact-item">${b}</div>`).join('');
-
-    // Districts
-    const dist = document.getElementById('detail-districts');
-    dist.innerHTML = il.ilceler.map(d => `<div class="district-tag">${d}</div>`).join('');
-
-    // Switch view
-    mapView.style.display = 'none';
-    detailView.style.display = 'flex';
-    detailView.style.flexDirection = 'column';
-    window.scrollTo(0, 0);
+function clearSel() {
+  if (selectedId !== null && circles[selectedId]) {
+    const prev = circles[selectedId];
+    prev.circle.setAttribute('r', prev.r);
+    prev.circle.setAttribute('stroke','#fff');
+    prev.circle.setAttribute('stroke-width','0.8');
   }
+  selectedId = null;
+  document.getElementById('backBtn').style.display = 'none';
+  document.getElementById('dp').innerHTML = '<div class="no-sel">Haritadan bir il seçin veya arama yapın</div>';
+}
 
-  // Back button
-  document.getElementById('back-btn').onclick = () => {
-    detailView.style.display = 'none';
-    mapView.style.display = 'flex';
-    mapView.style.flexDirection = 'column';
-    window.scrollTo(0, 0);
+const regions = ['Tümü',...new Set(ILLER_DATA.map(i=>i.bolge))];
+const rfilter = document.getElementById('rfilter');
+regions.forEach(r => {
+  const btn = document.createElement('button');
+  btn.className = 'rbtn' + (r==='Tümü'?' active':'');
+  btn.textContent = r;
+  btn.style.fontSize = '11px';
+  if (BOLGE_COLORS[r]) {
+    btn.dataset.color = BOLGE_COLORS[r];
+  }
+  btn.onclick = () => {
+    activeRegion = r;
+    document.querySelectorAll('.rbtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    filterMap();
   };
+  rfilter.appendChild(btn);
+});
 
-  // Initial render
-  renderGrid();
+function filterMap() {
+  const q = document.getElementById('srch').value.trim().toLowerCase();
+  ILLER_DATA.forEach(il => {
+    const c = circles[il.id];
+    if (!c) return;
+    const matchR = activeRegion==='Tümü' || il.bolge===activeRegion;
+    const matchQ = !q || il.ad.toLowerCase().includes(q) || il.plaka.includes(q);
+    c.g.style.display = (matchR && matchQ) ? '' : 'none';
+  });
+}
+
+document.getElementById('srch').addEventListener('input', e => {
+  const q = e.target.value.trim().toLowerCase();
+  if (q.length >= 2) {
+    const found = ILLER_DATA.find(il => il.ad.toLowerCase().startsWith(q));
+    if (found) showDetail(found);
+  }
+  filterMap();
+});
 </script>
-</body>
-</html>
